@@ -24,6 +24,7 @@
 
 //These headers handle processing of specific detector types
 #include "BetaScintProcessor.hpp"
+#include "CompassProcessor.hpp"
 #include "CloverCalibProcessor.hpp"
 #include "CloverFragProcessor.hpp"
 #include "CloverProcessor.hpp"
@@ -227,6 +228,8 @@ vector<EventProcessor *> DetectorDriverXmlParser::ParseProcessors(const pugi::xm
             vecProcess.push_back(new SingleBetaProcessor());
         } else if (name == "RootDevProcessor") {
             vecProcess.push_back(new RootDevProcessor());
+        } else if (name == "CompassProcessor") {
+            vecProcess.push_back(new CompassProcessor());
         } else if (name == "TeenyVandleProcessor") {
             vecProcess.push_back(new TeenyVandleProcessor());
         } else if (name == "TemplateProcessor") {
