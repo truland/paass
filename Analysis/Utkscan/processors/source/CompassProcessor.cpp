@@ -68,8 +68,9 @@ bool CompassProcessor::Process(RawEvent &event) {
 		if ((*it)->GetTrace().size() > 0) {
 			unsigned int len_arr = (*it)->GetTrace().size();
 			samples->Set(len_arr);
+			auto trace = (*it)->GetTrace();
 			for( unsigned int ii = 0; ii < len_arr; ++ii )
-				samples->SetAt((*it)->GetTrace().at(ii),ii);
+				samples->SetAt(trace.at(ii),ii);
 		}
 		if (!(*it)->GetQdc().empty()) {
 			//set energyshort in here
