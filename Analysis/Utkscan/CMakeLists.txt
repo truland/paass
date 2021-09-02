@@ -57,6 +57,9 @@ SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 ROOT_GENERATE_DICTIONARY(PaassRootStruct PaassRootStruct.hpp LINKDEF core/include/PaassRootLinkDef.hpp )
 add_library(PaassRootStruct SHARED PaassRootStruct.cxx PaassRootStruct)
 
+ROOT_GENERATE_DICTIONARY(MMTASStruct MMTASStruct.hpp LINKDEF core/include/MMTASLinkDef.hpp )
+add_library(MMTASStruct SHARED MMTASStruct.cxx MMTASStruct)
+
 #End T.T. King Additions
 #------------------------------------------------------------------------------
 
@@ -68,7 +71,8 @@ if (NOT PAASS_USE_HRIBF)
             $<TARGET_OBJECTS:UtkscanAnalyzerObjects>
             $<TARGET_OBJECTS:UtkscanProcessorObjects>
             $<TARGET_OBJECTS:UtkscanExperimentObjects>
-            PaassRootStruct.cxx)
+            PaassRootStruct.cxx
+	    MMTASStruct.cxx)
 else (PAASS_USE_HRIBF)
     set(SCAN_NAME utkscanor)
     add_executable(${SCAN_NAME}
@@ -78,18 +82,19 @@ else (PAASS_USE_HRIBF)
             $<TARGET_OBJECTS:UtkscanProcessorObjects>
             $<TARGET_OBJECTS:UtkscanExperimentObjects>
             $<TARGET_OBJECTS:ScanorObjects>
-            PaassRootStruct.cxx)
+            PaassRootStruct.cxx
+	    MMTASStruct.cxx)
     target_link_libraries(utkscanor ${HRIBF_LIBRARIES})
 endif (NOT PAASS_USE_HRIBF)
 
-target_link_libraries(${SCAN_NAME} ${LIBS} PaassRootStruct PaassScanStatic ResourceStatic PaassCoreStatic PugixmlStatic PaassResourceStatic )
+target_link_libraries(${SCAN_NAME} ${LIBS} PaassRootStruct MMTASStruct PaassScanStatic ResourceStatic PaassCoreStatic PugixmlStatic PaassResourceStatic )
 
 if (PAASS_USE_GSL)
     target_link_libraries(${SCAN_NAME} ${GSL_LIBRARIES})
 endif (PAASS_USE_GSL)
 
 if (PAASS_USE_ROOT)
-    target_link_libraries(${SCAN_NAME} ${ROOT_LIBRARIES} PaassRootStruct)
+	target_link_libraries(${SCAN_NAME} ${ROOT_LIBRARIES} PaassRootStruct MMTASStruct)
 endif (PAASS_USE_ROOT)
 
 #------------------------------------------------------------------------------
@@ -97,10 +102,13 @@ endif (PAASS_USE_ROOT)
 install(TARGETS ${SCAN_NAME} DESTINATION bin)
 install(DIRECTORY share/utkscan DESTINATION share)
 install(TARGETS PaassRootStruct DESTINATION lib)
+install(TARGETS MMTASStruct DESTINATION lib)
 
 install(FILES ${CMAKE_SOURCE_DIR}/Analysis/Utkscan/core/include/PaassRootStruct.hpp DESTINATION include/)
+install(FILES ${CMAKE_SOURCE_DIR}/Analysis/Utkscan/core/include/MMTASStruct.hpp DESTINATION include/)
 install(FILES ${CMAKE_SOURCE_DIR}/Analysis/Utkscan/processors/include/GSaddback.hpp DESTINATION include/)
 #Install the ROOT 6 PCM.
 if (${ROOT_VERSION} VERSION_GREATER "6.0")
     install( FILES ${CMAKE_CURRENT_BINARY_DIR}/PaassRootStruct_rdict.pcm DESTINATION lib/)
+    install( FILES ${CMAKE_CURRENT_BINARY_DIR}/MMTASStruct_rdict.pcm DESTINATION lib/)
 endif (${ROOT_VERSION} VERSION_GREATER "6.0")
