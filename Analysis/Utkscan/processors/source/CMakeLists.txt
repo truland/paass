@@ -2,6 +2,7 @@
 set(PROCESSOR_SOURCES
         BetaScintProcessor.cpp
         DoubleBetaProcessor.cpp
+        CompassProcessor.cpp
         CloverCalibProcessor.cpp
         CloverFragProcessor.cpp
         CloverProcessor.cpp
@@ -18,11 +19,11 @@ set(PROCESSOR_SOURCES
         LitePositionProcessor.cpp
         LogicProcessor.cpp
         McpProcessor.cpp
+	MMTASProcessor.cpp
         NeutronScintProcessor.cpp
         PositionProcessor.cpp
         PspmtProcessor.cpp
         RootDevProcessor.cpp
-        CompassProcessor.cpp
         SingleBetaProcessor.cpp
         TeenyVandleProcessor.cpp
         TemplateProcessor.cpp

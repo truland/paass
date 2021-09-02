@@ -21,60 +21,14 @@
 
 using namespace std;
 
-MMTASProcessor::MMTASProcessor(bool recordtrace) : EventProcessor() {
+MMTASProcessor::MMTASProcessor() : EventProcessor() {
 	associatedTypes.insert("MMTAS");
 	
-	RecordTraces = recordtrace;
-
 	Rev = Globals::get()->GetPixieRevision();
 	std::string name = Globals::get()->GetOutputPath() + Globals::get()->GetOutputFileName() + "_MMTAS.root";
 	outputfile = new TFile(name.c_str(),"RECREATE");
 	outputtree = new TTree("Event","Output from MMTASProcess in utkscan. For ORNL Pixie setup");
-	
-	for( auto ii = 0; ii < NumNaILeft; ++ii ){
-		string currdet = "NaI"_+"L_"+to_string(ii);
-		HitsMap[currdet] = MMTASSingleDetector();
-		outputtree->Branch((currdet+"_Energy").c_str(),&HitsMap[currdet].energy);
-		outputtree->Branch((currdet+"_Energy_RAW").c_str(),&HitsMap[currdet].rawenergy);
-		outputtree->Branch((currdet+"_Timestamp").c_str(),&HitsMap[currdet].timestamp);
-		outputtree->Branch((currdet+"_FineTimestamp").c_str(),&HitsMap[currdet].finetimestamp);
-		outputtree->Branch((currdet+"_PSD").c_str(),&HitsMap[currdet].psd);
-		if( RecordTraces)
-			outputtree->Branch((currdet+"_Trace").c_str(),&HitsMap[currdet].trace);
-	}
-	for( auto ii = 0; ii < NumNaIRight; ++ii ){
-		string currdet = "NaI"_+"R_"+to_string(ii);
-		HitsMap[currdet] = MMTASSingleDetector();
-		outputtree->Branch((currdet+"_Energy").c_str(),&HitsMap[currdet].energy);
-		outputtree->Branch((currdet+"_Energy_RAW").c_str(),&HitsMap[currdet].rawenergy);
-		outputtree->Branch((currdet+"_Timestamp").c_str(),&HitsMap[currdet].timestamp);
-		outputtree->Branch((currdet+"_FineTimestamp").c_str(),&HitsMap[currdet].finetimestamp);
-		outputtree->Branch((currdet+"_PSD").c_str(),&HitsMap[currdet].psd);
-		if( RecordTraces)
-			outputtree->Branch((currdet+"_Trace").c_str(),&HitsMap[currdet].trace);
-	}
-	for( auto ii = 0; ii < NumBeesLeft; ++ii ){
-		string currdet = "BeES_"_+"L_"+to_string(ii);
-		HitsMap[currdet] = MMTASSingleDetector();
-		outputtree->Branch((currdet+"_Energy").c_str(),&HitsMap[currdet].energy);
-		outputtree->Branch((currdet+"_Energy_RAW").c_str(),&HitsMap[currdet].rawenergy);
-		outputtree->Branch((currdet+"_Timestamp").c_str(),&HitsMap[currdet].timestamp);
-		outputtree->Branch((currdet+"_FineTimestamp").c_str(),&HitsMap[currdet].finetimestamp);
-		outputtree->Branch((currdet+"_PSD").c_str(),&HitsMap[currdet].psd);
-		if( RecordTraces)
-			outputtree->Branch((currdet+"_Trace").c_str(),&HitsMap[currdet].trace);
-	}
-	for( auto ii = 0; ii < NumBeesRight; ++ii ){
-		string currdet = "BeES"_+"R_"+to_string(ii);
-		HitsMap[currdet] = MMTASSingleDetector();
-		outputtree->Branch((currdet+"_Energy").c_str(),&HitsMap[currdet].energy);
-		outputtree->Branch((currdet+"_Energy_RAW").c_str(),&HitsMap[currdet].rawenergy);
-		outputtree->Branch((currdet+"_Timestamp").c_str(),&HitsMap[currdet].timestamp);
-		outputtree->Branch((currdet+"_FineTimestamp").c_str(),&HitsMap[currdet].finetimestamp);
-		outputtree->Branch((currdet+"_PSD").c_str(),&HitsMap[currdet].psd);
-		if( RecordTraces)
-			outputtree->Branch((currdet+"_Trace").c_str(),&HitsMap[currdet].trace);
-	}
+	outputtree->Branch("mmtas_vec_",&mmtas_vec_);
 }
 
 bool MMTASProcessor::PreProcess(RawEvent &event) {
@@ -91,31 +45,51 @@ bool MMTASProcessor::Process(RawEvent &event) {
 	static const auto &Events = event.GetSummary("MMTAS", true)->GetList();
 	string currdet;
 	for (auto it = Events.begin(); it != Events.end(); it++) {
+		MMstruct.energy = (*it)->GetCalibratedEnergy();
+		MMstruct.rawEnergy = (*it)->GetEnergy();
 		if (Rev == "F") {
-			timestamp =  (*it)->GetTimeSansCfd() * Globals::get()->GetClockInSeconds((*it)->GetChanID().GetModFreq()) * 1e12;
+			MMstruct.timeSansCfd = (*it)->GetTimeSansCfd() * Globals::get()->GetClockInSeconds((*it)->GetChanID().GetModFreq()) * 1e9;
+			MMstruct.time = (*it)->GetTime() * Globals::get()->GetAdcClockInSeconds((*it)->GetChanID().GetModFreq()) * 1e9;
 		} else {
-			timestamp =  (*it)->GetTimeSansCfd() * Globals::get()->GetClockInSeconds() * 1e12;
+			MMstruct.timeSansCfd = (*it)->GetTimeSansCfd() * Globals::get()->GetClockInSeconds() * 1e9;
+			MMstruct.time = (*it)->GetTime() * Globals::get()->GetAdcClockInSeconds() * 1e9;
 		}
+		MMstruct.detNum = (*it)->GetChanID().GetLocation();
+		MMstruct.modNum = (*it)->GetModuleNumber();
+		MMstruct.chanNum = (*it)->GetChannelNumber();
+		MMstruct.subtype = (*it)->GetChanID().GetSubtype();
+		MMstruct.group = (*it)->GetChanID().GetGroup();
+		MMstruct.pileup = (*it)->IsPileup();
+		MMstruct.saturation = (*it)->IsSaturated();
 
-		energy =  (*it)->GetEnergy();
-		channel = (*it)->GetChannelNumber();
-		board = (*it)->GetModuleNumber();
-
-		if( RecordTraces ){
-			if ((*it)->GetTrace().size() > 0) {
-				unsigned int len_arr = (*it)->GetTrace().size();
-				samples->Set(len_arr);
-				auto trace = (*it)->GetTrace();
-				for( unsigned int ii = 0; ii < len_arr; ++ii )
-					samples->SetAt(trace.at(ii),ii);
+		if ((*it)->GetTrace().size() > 0) {
+			auto trace = (*it)->GetTrace();
+			MMstruct.hasValidTimingAnalysis = trace.HasValidTimingAnalysis();
+			MMstruct.hasValidWaveformAnalysis = trace.HasValidWaveformAnalysis();
+			MMstruct.baseline = trace.GetBaselineInfo().first;
+			MMstruct.stdBaseline = trace.GetBaselineInfo().second;
+			MMstruct.trace = trace;
+			MMstruct.maxPos = trace.GetMaxInfo().first;
+			MMstruct.maxVal = trace.GetMaxInfo().second;
+			MMstruct.extMaxVal = trace.GetExtrapolatedMaxInfo().second;
+			MMstruct.tqdc = trace.GetQdc();
+			MMstruct.highResTime = (*it)->GetHighResTimeInNs();
+			if (Rev == "F") {
+				MMstruct.phase = trace.GetPhase() * Globals::get()->GetAdcClockInSeconds((*it)->GetChanID().GetModFreq()) * 1e9;
+			} else {
+				MMstruct.phase = trace.GetPhase() * Globals::get()->GetAdcClockInSeconds() * 1e9;
 			}
 		}
-		//if (!(*it)->GetQdc().empty()) {
-			//set energyshort in here
-			//currently is a no-op
-		//}
+		if (!(*it)->GetQdc().empty()) {
+			MMstruct.qdcSums = (*it)->GetQdc();
+		}
+		mmtas_vec_.push_back(MMstruct);
+		//pixie_tree_event_->root_dev_vec_.emplace_back(MMstruct);
+		MMstruct = MMTAS_DEFAULT_STRUCT;
+
 	}
 	outputtree->Fill();
+	mmtas_vec_.clear();
 	EndProcess();
 	return true;
 }
