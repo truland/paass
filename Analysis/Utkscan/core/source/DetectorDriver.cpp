@@ -163,7 +163,8 @@ void DetectorDriver::Init(RawEvent &rawev) {
 
     for (vector<EventProcessor *>::iterator it = vecProcess.begin(); it != vecProcess.end(); it++)
         (*it)->Init(rawev);
-
+///@TODO TTK Change PixTreeEvent Constructor to take a list and only create a tree with the relavent branches. To avoid writing empty vectors
+///this will require lots of testing to see if the single root dictionary can handle this.
     walk_ = DetectorLibrary::get()->GetWalkCorrections();
     cali_ = DetectorLibrary::get()->GetCalibrations();
 }
