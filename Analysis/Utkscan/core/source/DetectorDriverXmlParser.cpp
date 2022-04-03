@@ -42,6 +42,7 @@
 #include "LogicProcessor.hpp"
 #include "McpProcessor.hpp"
 #include "MMTASProcessor.hpp"
+#include "MtasProcessor.hpp"
 #include "NeutronScintProcessor.hpp"
 #include "PositionProcessor.hpp"
 #include "PspmtProcessor.hpp"
@@ -233,6 +234,8 @@ vector<EventProcessor *> DetectorDriverXmlParser::ParseProcessors(const pugi::xm
             vecProcess.push_back(new CompassProcessor());
         } else if (name == "MMTASProcessor") {
             vecProcess.push_back(new MMTASProcessor());
+        } else if (name == "MtasProcessor") {
+            vecProcess.push_back(new MtasProcessor());
         } else if (name == "TeenyVandleProcessor") {
             vecProcess.push_back(new TeenyVandleProcessor());
         } else if (name == "TemplateProcessor") {
