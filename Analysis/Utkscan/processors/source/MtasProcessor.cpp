@@ -268,7 +268,7 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 		int segmentID = segIter->gMtasSegID_;
 		auto segmentAvgresult = segIter->GetSegmentAverageEnergy();
 		auto segTdiffresult = segIter->GetSegmentTdiffInNS();
-		double positionresult = segIter->GetSegmentPosition();
+		auto positionresult = segIter->GetSegmentPosition();
 		if( (not segmentAvgresult.second) or (not segTdiffresult.second) or (not positionresult.second) ){
 			continue;
 		}else{
