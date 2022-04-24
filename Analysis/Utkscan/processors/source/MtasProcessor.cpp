@@ -148,9 +148,10 @@ void MtasProcessor::DeclarePlots(void){
 }
 
 
-MtasProcessor::MtasProcessor() : EventProcessor(OFFSET, RANGE, "MtasProcessor") {
+MtasProcessor::MtasProcessor(bool newcenter) : EventProcessor(OFFSET, RANGE, "MtasProcessor") {
 	associatedTypes.insert("mtas");
 	PixieRev = Globals::get()->GetPixieRevision();
+	IsNewCenter = newcenter;
 }
 
 bool MtasProcessor::PreProcess(RawEvent &event) {
@@ -227,15 +228,22 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 	double middleSum = 0;
 	double outerSum = 0;
 	double totalSum = 0;
-	//!USE LAMBDA FUNCTION FOR THIS. MAKES TYPOS LESS LIKELY
-	//auto energyfunc = [](double a, double b) { return (a + b) / 2.0; };
-	//auto tdiffFunc = [](double a, double b) { return a - b; };
+	int NumCenter = 0;
+	for( auto ii = 0; ii < 6; ++ii ){
+		if( MtasSegVec.at(ii).IsValidSegment() )
+			NumCenter++;
+	}
 	for (auto segIter = MtasSegVec.begin(); segIter != MtasSegVec.end(); ++segIter) {
 		int segmentID = segIter->gMtasSegID_;
 		if (segmentID >= 0 && segmentID <= 5 && segIter->IsValidSegment() ){
 			double segmentAvg = segIter->GetSegmentAverageEnergy();
-			totalSum += segmentAvg;
-			centerSum += segmentAvg;
+			if( IsNewCenter ){
+				totalSum += segmentAvg;
+				centerSum += segmentAvg;
+			}else{
+				totalSum += segmentAvg/static_cast<double>(NumCenter);
+				centerSum += segmentAvg/static_cast<double>(NumCenter);
+			}
 		} else if (segmentID >= 6 && segmentID <= 11 && segIter->IsValidSegment() ){
 			double segmentAvg = segIter->GetSegmentAverageEnergy();
 			totalSum += segmentAvg;

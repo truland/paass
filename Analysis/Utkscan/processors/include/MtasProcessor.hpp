@@ -11,6 +11,8 @@
 #include "RawEvent.hpp"
 #include "Globals.hpp"
 
+#include <utility>
+
 class MtasSegment {
 	public: 
 		/** Constructor */
@@ -23,7 +25,7 @@ class MtasSegment {
 		/** Destructor */
 		~MtasSegment() = default;
 		bool IsValidSegment() const { return segBack_ != nullptr and segFront_ != nullptr; }
-		double GetSegmentPosition() const{
+		std::pair<double,bool> double GetSegmentPosition() const{
 			return (segFront_->GetCalibratedEnergy() - segBack_->GetCalibratedEnergy())/(segFront_->GetCalibratedEnergy() + segBack_->GetCalibratedEnergy());
 		}
 				
@@ -72,7 +74,7 @@ class MtasSegment {
 class MtasProcessor : public EventProcessor {
 	public:
 		/**Constructor */
-		MtasProcessor();
+		MtasProcessor(bool);
 
 		/** Deconstructor */
 		~MtasProcessor() = default;
@@ -96,6 +98,7 @@ class MtasProcessor : public EventProcessor {
 	private:
 		//processor_struct::MTAS Mtasstruct;  //!<Root Struct
 		std::string PixieRev; //! pixie revision
+		bool IsNewCenter;
 
 };
 
