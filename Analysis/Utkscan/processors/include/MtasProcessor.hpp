@@ -6,6 +6,8 @@
 #ifndef PAASS_MtasProcessor_H
 #define PAASS_MtasProcessor_H
 
+#include <utility>
+
 #include "EventProcessor.hpp"
 #include "PaassRootStruct.hpp"
 #include "RawEvent.hpp"
@@ -25,42 +27,46 @@ class MtasSegment {
 		/** Destructor */
 		~MtasSegment() = default;
 		bool IsValidSegment() const { return segBack_ != nullptr and segFront_ != nullptr; }
-		std::pair<double,bool> double GetSegmentPosition() const{
-			return (segFront_->GetCalibratedEnergy() - segBack_->GetCalibratedEnergy())/(segFront_->GetCalibratedEnergy() + segBack_->GetCalibratedEnergy());
+		std::pair<double,bool> GetSegmentPosition() const{
+			if( IsValidSegment() ){
+				return std::make_pair((segFront_->GetCalibratedEnergy() - segBack_->GetCalibratedEnergy())/(segFront_->GetCalibratedEnergy() + segBack_->GetCalibratedEnergy()),true);
+			}else{
+				return std::make_pair(0.0,false);
+			}
 		}
 				
-		double GetSegmentAverageEnergy() const { 
+		std::pair<double,bool> GetSegmentAverageEnergy() const { 
 			if( IsValidSegment() ){
-				return (segFront_->GetCalibratedEnergy() + segBack_->GetCalibratedEnergy())/2.0; 
+				return std::make_pair((segFront_->GetCalibratedEnergy() + segBack_->GetCalibratedEnergy())/2.0,true); 
 			}else{
-				return 0.0;
+				return std::make_pair(0.0,false);
 			}
 		}
-		double GetSegmentTdiffInNS() const { 
-			if( not IsValidSegment() ){
-				throw "Unable to get Tdiff. Not valid Segment";
-			}
+		std::pair<double,bool> GetSegmentTdiffInNS() const { 
 			double clockInSeconds;
 			if (PixieRev == "F"){
 				clockInSeconds = Globals::get()->GetClockInSeconds(segFront_->GetChanID().GetModFreq());
 			} else {
 				clockInSeconds = Globals::get()->GetClockInSeconds();
 			}
-
-			return (segFront_->GetTimeSansCfd() - segBack_->GetTimeSansCfd()) * clockInSeconds * 1.0e9;
-		}
-		double GetFrontEnergy() const{
-			if( segFront_ == nullptr ){
-				return 0.0;
+			if( IsValidSegment() ){
+				return std::make_pair((segFront_->GetTimeSansCfd() - segBack_->GetTimeSansCfd()) * clockInSeconds * 1.0e9,true);
 			}else{
-				return segFront_->GetCalibratedEnergy();
+				return std::make_pair(0.0,false);
 			}
 		}
-		double GetBackEnergy() const{
-			if( segBack_ == nullptr ){
-				return 0.0;
+		std::pair<double,bool> GetFrontEnergy() const{
+			if( segFront_ == nullptr ){
+				return std::make_pair(0.0,false);
 			}else{
-				return segBack_->GetCalibratedEnergy();
+				return std::make_pair(segFront_->GetCalibratedEnergy(),true);
+			}
+		}
+		std::pair<double,bool> GetBackEnergy() const{
+			if( segBack_ == nullptr ){
+				return std::make_pair(0.0,false);
+			}else{
+				return std::make_pair(segBack_->GetCalibratedEnergy(),true);
 			}
 		}
 
