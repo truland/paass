@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <utility>
 
 #include "DetectorDriver.hpp"
 #include "DetectorLibrary.hpp"
@@ -223,11 +224,11 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 	}  //! end loop over chanEvents.
 
 	//! begin loop over segments for sums
-	double centerSum = 0;
-	double innerSum = 0;
-	double middleSum = 0;
-	double outerSum = 0;
-	double totalSum = 0;
+	pair<double,bool> centerSum = make_pair(0,false);
+	pair<double,bool> innerSum = make_pair(0,false);
+	pair<double,bool> middleSum = make_pair(0,false);
+	pair<double,bool> outerSum = make_pair(0,false);
+	pair<double,bool> totalSum = make_pair(0,false);
 	int NumCenter = 0;
 	for( auto ii = 0; ii < 6; ++ii ){
 		if( MtasSegVec.at(ii).IsValidSegment() )
@@ -242,25 +243,30 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 		if( not result.second ){
 			continue;
 		}else{
+			totalSum.second = true;
 			segmentAvg = result.first;
 		}
 		if (segmentID >= 0 && segmentID <= 5 ){
+			centerSum.second = true;
 			if( IsNewCenter ){
-				totalSum += segmentAvg;
-				centerSum += segmentAvg;
+				totalSum.first += segmentAvg;
+				centerSum.first += segmentAvg;
 			}else{
-				totalSum += segmentAvg/static_cast<double>(NumCenter);
-				centerSum += segmentAvg/static_cast<double>(NumCenter);
+				totalSum.first += segmentAvg/static_cast<double>(NumCenter);
+				centerSum.first += segmentAvg/static_cast<double>(NumCenter);
 			}
 		} else if (segmentID >= 6 && segmentID <= 11 ){
-			totalSum += segmentAvg;
-			innerSum += segmentAvg;
+			innerSum.second = true;
+			totalSum.first += segmentAvg;
+			innerSum.first += segmentAvg;
 		} else if (segmentID >= 12 && segmentID <= 17 ){
-			totalSum += segmentAvg;
-			middleSum += segmentAvg;
+			middleSum.second = true;
+			totalSum.first += segmentAvg;
+			middleSum.first += segmentAvg;
 		} else if (segmentID >= 18 && segmentID <= 23 ){
-			totalSum += segmentAvg;
-			outerSum += segmentAvg;
+			outerSum.second = true;
+			totalSum.first += segmentAvg;
+			outerSum.first += segmentAvg;
 		}
 	}
 	//! loop over segments for ploting
@@ -287,8 +293,8 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 			//! per segment plots
 			plot(D_MTAS_SUM_FB + CENTER_OFFSET + segmentID, segmentAvg);
 			plot(D_MTAS_CENTER_INDI, segmentAvg);
-			plot(DD_MTAS_CS_T, totalSum, segmentAvg);
-			plot(DD_MTAS_CS_CR,centerSum,segmentAvg);
+			plot(DD_MTAS_CS_T, totalSum.first, segmentAvg);
+			plot(DD_MTAS_CS_CR,centerSum.first,segmentAvg);
 			
 			if( segmentID == 0 )
 				plot(DD_MTAS_C1_POSITION,position,segmentAvg);
@@ -300,7 +306,7 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 
 			//! per segment plots
 			plot(D_MTAS_SUM_FB + INNER_OFFSET + (segmentID - 6), segmentAvg);  //! subtract 12 to put it back in segments 1 - 6
-			plot(DD_MTAS_IMO_T, totalSum, segmentAvg);
+			plot(DD_MTAS_IMO_T, totalSum.first, segmentAvg);
 		} else if (segmentID >= 12 && segmentID <= 17 ){
 			plot(D_MTAS_TDIFF_OFFSET + MIDDLE_OFFSET +  (segmentID-12), segTdiff + SE/2 );
 
@@ -309,7 +315,7 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 
 			//! per segment plots
 			plot(D_MTAS_SUM_FB + MIDDLE_OFFSET + (segmentID-12), segmentAvg); //! subtract 12 to put it back in segments 1 - 6 
-			plot(DD_MTAS_IMO_T,totalSum,segmentAvg);
+			plot(DD_MTAS_IMO_T,totalSum.first,segmentAvg);
 		}else if (segmentID >= 18 && segmentID <= 23 ){
 			plot(D_MTAS_TDIFF_OFFSET + OUTER_OFFSET +  (segmentID-18), segTdiff + SE/2 );
 
@@ -318,7 +324,7 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 
 			//! per segment plots
 			plot(D_MTAS_SUM_FB + OUTER_OFFSET + (segmentID-18), segmentAvg); //! subtract 12 to put it back in segments 1 - 6 
-			plot(DD_MTAS_IMO_T,totalSum,segmentAvg);
+			plot(DD_MTAS_IMO_T,totalSum.first,segmentAvg);
 		}
 	}
 
@@ -349,13 +355,19 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 	//}
 
 	//! sum spectra
-	plot(D_MTAS_TOTAL, totalSum);
-	plot(D_MTAS_CENTER, centerSum);
-	plot(D_MTAS_INNER, innerSum);
-	plot(D_MTAS_MIDDLE, middleSum);
-	plot(D_MTAS_OUTER, outerSum);
+	if( totalSum.second )
+		plot(D_MTAS_TOTAL, totalSum.first);
+	if( centerSum.second )
+		plot(D_MTAS_CENTER, centerSum.first);
+	if( innerSum.second )
+		plot(D_MTAS_INNER, innerSum.first);
+	if( middleSum.second )
+		plot(D_MTAS_MIDDLE, middleSum.first);
+	if( outerSum.second )
+		plot(D_MTAS_OUTER, outerSum.first);
 
-	plot(DD_MTAS_CR_T, totalSum, centerSum);
+	if( totalSum.second and centerSum.second )
+		plot(DD_MTAS_CR_T, totalSum.first, centerSum.first);
 
 	//plot(DD_MTAS_C1_C2,MtasSegVec.at(1).GetSegmentAverageEnergy(),MtasSegVec.at(0).GetSegmentAverageEnergy());
 	//plot(DD_MTAS_C1_C6,MtasSegVec.at(5).GetSegmentAverageEnergy(),MtasSegVec.at(0).GetSegmentAverageEnergy());
