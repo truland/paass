@@ -149,10 +149,11 @@ void MtasProcessor::DeclarePlots(void){
 }
 
 
-MtasProcessor::MtasProcessor(bool newcenter) : EventProcessor(OFFSET, RANGE, "MtasProcessor") {
+MtasProcessor::MtasProcessor(bool newcenter,bool zerosuppress) : EventProcessor(OFFSET, RANGE, "MtasProcessor") {
 	associatedTypes.insert("mtas");
 	PixieRev = Globals::get()->GetPixieRevision();
 	IsNewCenter = newcenter;
+	HasZeroSuppression = zerosuppress;
 }
 
 bool MtasProcessor::PreProcess(RawEvent &event) {
@@ -161,11 +162,11 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 
 	static const auto &chanEvents = event.GetSummary("mtas", true)->GetList();
 
-	vector<MtasSegment> MtasSegVec(24, MtasSegment());
+	vector<MtasSegment> MtasSegVec(24, MtasSegment(HasZeroSuppression));
 	vector<short> MtasSegMulti(48,0); // MTAS segment multiplicity "map"
 
+	double EarliestTime = 1.0e99;
 	for (auto chanEvtIter = chanEvents.begin(); chanEvtIter != chanEvents.end(); ++chanEvtIter){
-
 		//! needs try/catch for non numeric string in group
 		int segmentNum = stoi((*chanEvtIter)->GetChanID().GetGroup().c_str());
 		string Ring = StringManipulation::StringLower((*chanEvtIter)->GetChanID().GetSubtype());
@@ -204,19 +205,26 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 		int GlobalMtasSegID = RingOffset + segmentNum;
 		int GlobalMtasChanID = (segmentNum + RingOffset) * 2 + chanOffset;
 
-		if( (*chanEvtIter)->IsSaturated() || (*chanEvtIter)->IsPileup()){
+		//THE SATURATE AND PILEUP CHECK SHOULD NOT BE PERFORMED ON LOGIC SIGNALS IN HISTORICAL DATA
+		//THIS IS BECAUSE ALL BUT THE MTC SIGNAL TRIP ONE OF THESE FLAGS SO BE CAREFUL
+		//YOU'VE BEEN WARNED.
+		//-THOMAS RULAND 04/25/2022
+		if( (*chanEvtIter)->IsSaturated() || (*chanEvtIter)->IsPileup() or (*chanEvtIter)->GetEnergy() > 30000 ){
 			continue;
 		} else {
-
 			MtasSegMulti.at(GlobalMtasChanID)++; // increment the multipliciy "map" based on GlobalMtasSegID
 
 			MtasSegVec.at(GlobalMtasSegID).gMtasSegID_ = GlobalMtasSegID;
 			if(isFront && MtasSegVec.at(GlobalMtasSegID).segFront_ == nullptr){  
+				if( (*chanEvtIter)->GetTimeSansCfd() < EarliestTime )
+					EarliestTime = (*chanEvtIter)->GetTimeSansCfd(); 
 				MtasSegVec.at(GlobalMtasSegID).segFront_ = (*chanEvtIter);
 				MtasSegVec.at(GlobalMtasSegID).PixieRev = PixieRev;
 			}
 			//! Thomas Ruland Gets a gold star 
 			else if (isBack && MtasSegVec.at(GlobalMtasSegID).segBack_ == nullptr) { 
+				if( (*chanEvtIter)->GetTimeSansCfd() < EarliestTime )
+					EarliestTime = (*chanEvtIter)->GetTimeSansCfd(); 
 				MtasSegVec.at(GlobalMtasSegID).segBack_ = (*chanEvtIter);
 				MtasSegVec.at(GlobalMtasSegID).PixieRev = PixieRev;
 			}
@@ -224,11 +232,11 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 	}  //! end loop over chanEvents.
 
 	//! begin loop over segments for sums
-	pair<double,bool> centerSum = make_pair(0,false);
-	pair<double,bool> innerSum = make_pair(0,false);
-	pair<double,bool> middleSum = make_pair(0,false);
-	pair<double,bool> outerSum = make_pair(0,false);
-	pair<double,bool> totalSum = make_pair(0,false);
+	pair<double,bool> centerSum = make_pair(0,not HasZeroSuppression);
+	pair<double,bool> innerSum = make_pair(0,not HasZeroSuppression);
+	pair<double,bool> middleSum = make_pair(0,not HasZeroSuppression);
+	pair<double,bool> outerSum = make_pair(0,not HasZeroSuppression);
+	pair<double,bool> totalSum = make_pair(0,not HasZeroSuppression);
 	int NumCenter = 0;
 	for( auto ii = 0; ii < 6; ++ii ){
 		if( MtasSegVec.at(ii).IsValidSegment() )
@@ -237,6 +245,8 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 	double segmentAvg = 0.0;
 	double segTdiff = 0.0;
 	double position = 0.0;
+	double frontenergy = 0.0;
+	double backenergy = 0.0;
 	for (auto segIter = MtasSegVec.begin(); segIter != MtasSegVec.end(); ++segIter) {
 		int segmentID = segIter->gMtasSegID_;
 		auto result = segIter->GetSegmentAverageEnergy();
@@ -275,20 +285,24 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 		auto segmentAvgresult = segIter->GetSegmentAverageEnergy();
 		auto segTdiffresult = segIter->GetSegmentTdiffInNS();
 		auto positionresult = segIter->GetSegmentPosition();
-		if( (not segmentAvgresult.second) or (not segTdiffresult.second) or (not positionresult.second) ){
+		auto FrontEnergyResult = segIter->GetFrontEnergy();
+		auto BackEnergyResult = segIter->GetBackEnergy();
+		if( (not segmentAvgresult.second) or (not segTdiffresult.second) or (not positionresult.second) or (not FrontEnergyResult.second) or (not BackEnergyResult.second)){
 			continue;
 		}else{
 			segmentAvg = segmentAvgresult.first;
 			segTdiff = segTdiffresult.first;
 			position = ((SD/2)*(1.0 + positionresult.first));
+			frontenergy = FrontEnergyResult.first;
+			backenergy = BackEnergyResult.first;
 		}
 		if (segmentID >= 0 && segmentID <= 5 ){
 			//D_MTAS_SUM_FB + 50 + OUTER_OFFSET + (2* i ),
 
 			plot(D_MTAS_TDIFF_OFFSET + CENTER_OFFSET + segmentID, segTdiff + SE/2 );
 
-			plot(D_CONICIDENCE+ (2 * segmentID), segIter->segFront_->GetCalibratedEnergy());
-			plot(D_CONICIDENCE+ (2 * segmentID + 1), segIter->segBack_->GetCalibratedEnergy());
+			plot(D_CONICIDENCE+ (2 * segmentID), frontenergy);
+			plot(D_CONICIDENCE+ (2 * segmentID + 1), backenergy);
 
 			//! per segment plots
 			plot(D_MTAS_SUM_FB + CENTER_OFFSET + segmentID, segmentAvg);
@@ -301,8 +315,8 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 		} else if (segmentID >= 6 && segmentID <= 11 ){
 			plot(D_MTAS_TDIFF_OFFSET + INNER_OFFSET + (segmentID - 6), segTdiff + SE / 2);
 
-			plot(D_CONICIDENCE+ 12 + (2 * (segmentID-6)), segIter->segFront_->GetCalibratedEnergy());
-			plot(D_CONICIDENCE+ 12 + (2 * (segmentID-6) + 1), segIter->segBack_->GetCalibratedEnergy());
+			plot(D_CONICIDENCE+ 12 + (2 * (segmentID-6)), frontenergy);
+			plot(D_CONICIDENCE+ 12 + (2 * (segmentID-6) + 1), backenergy);
 
 			//! per segment plots
 			plot(D_MTAS_SUM_FB + INNER_OFFSET + (segmentID - 6), segmentAvg);  //! subtract 12 to put it back in segments 1 - 6
@@ -310,8 +324,8 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 		} else if (segmentID >= 12 && segmentID <= 17 ){
 			plot(D_MTAS_TDIFF_OFFSET + MIDDLE_OFFSET +  (segmentID-12), segTdiff + SE/2 );
 
-			plot(D_CONICIDENCE+ 24 + (2 * (segmentID - 12)), segIter->segFront_->GetCalibratedEnergy());
-			plot(D_CONICIDENCE+ 24 + (2 * (segmentID - 12) + 1), segIter->segBack_->GetCalibratedEnergy());
+			plot(D_CONICIDENCE+ 24 + (2 * (segmentID - 12)), frontenergy);
+			plot(D_CONICIDENCE+ 24 + (2 * (segmentID - 12) + 1), backenergy);
 
 			//! per segment plots
 			plot(D_MTAS_SUM_FB + MIDDLE_OFFSET + (segmentID-12), segmentAvg); //! subtract 12 to put it back in segments 1 - 6 
@@ -319,8 +333,8 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 		}else if (segmentID >= 18 && segmentID <= 23 ){
 			plot(D_MTAS_TDIFF_OFFSET + OUTER_OFFSET +  (segmentID-18), segTdiff + SE/2 );
 
-			plot(D_CONICIDENCE+ 36 + (2 * (segmentID-18)), segIter->segFront_->GetCalibratedEnergy());
-			plot(D_CONICIDENCE+ 36 + (2 * (segmentID-18) + 1), segIter->segBack_->GetCalibratedEnergy());
+			plot(D_CONICIDENCE+ 36 + (2 * (segmentID-18)), frontenergy);
+			plot(D_CONICIDENCE+ 36 + (2 * (segmentID-18) + 1), backenergy);
 
 			//! per segment plots
 			plot(D_MTAS_SUM_FB + OUTER_OFFSET + (segmentID-18), segmentAvg); //! subtract 12 to put it back in segments 1 - 6 
@@ -384,6 +398,9 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 		plot(D_ONE_OFFS + 0, it, MtasSegMulti.at(it));
 	}
 
+	//place MTAS_Total so other classes have access to it
+	EventData TotalData(EarliestTime,totalSum.first);
+	TreeCorrelator::get()->place("MTAS_Total")->activate(TotalData);
 
 	return true;
 }

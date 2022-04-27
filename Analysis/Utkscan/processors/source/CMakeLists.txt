@@ -1,6 +1,7 @@
 # @authors S. V. Paulauskas
 set(PROCESSOR_SOURCES
         BetaScintProcessor.cpp
+	BSMProcessor.cpp
         DoubleBetaProcessor.cpp
         CompassProcessor.cpp
         CloverCalibProcessor.cpp

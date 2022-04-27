@@ -199,6 +199,11 @@ namespace dammIds {
         const int RANGE = 100;//!< Range for Dssd4SheProcessor
     }
 
+    namespace bsm {
+    	const int OFFSET = 6500;
+	const int RANGE = 500;
+    }
+
     namespace mtas {
         const int OFFSET = 7200; //!< Offset for MTASProcessor
         const int RANGE = 800; //!< Range for MTASProcessor

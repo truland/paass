@@ -24,6 +24,7 @@
 
 //These headers handle processing of specific detector types
 #include "BetaScintProcessor.hpp"
+#include "BSMProcessor.hpp"
 #include "CompassProcessor.hpp"
 #include "CloverCalibProcessor.hpp"
 #include "CloverFragProcessor.hpp"
@@ -109,6 +110,12 @@ vector<EventProcessor *> DetectorDriverXmlParser::ParseProcessors(const pugi::xm
             vecProcess.push_back(new BetaScintProcessor(
                 processor.attribute("gamma_beta_limit").as_double(200.e-9),
                 processor.attribute("energy_contraction").as_double(1.0)));
+	} else if (name == "BSMProcessor" ){
+		vecProcess.push_back(new BSMProcessor(
+			processor.attribute("num_segments").as_int(1),
+			processor.attribute("zero_suppress").as_bool(false),
+			processor.attribute("stand_alone").as_bool(false)
+		));	
         } else if (name == "CloverCalibProcessor") {
             vecProcess.push_back(new CloverCalibProcessor(
                 processor.attribute("gamma_threshold").as_double(1),
@@ -236,7 +243,8 @@ vector<EventProcessor *> DetectorDriverXmlParser::ParseProcessors(const pugi::xm
             vecProcess.push_back(new MMTASProcessor());
         } else if (name == "MtasProcessor") {
             vecProcess.push_back(new MtasProcessor(
-		processor.attribute("new_center").as_bool(false)
+		processor.attribute("new_center").as_bool(false),
+		processor.attribute("zero_suppress").as_bool(false)
 	    ));
         } else if (name == "TeenyVandleProcessor") {
             vecProcess.push_back(new TeenyVandleProcessor());
