@@ -88,6 +88,26 @@ struct MTAS {
 };
 static const MTAS MTAS_DEFAULT_STRUCT;
 
+struct NEXT {
+    /* Data container for NEXT */
+   double tof = -9999;
+   double corTof = -9999;
+   double qdcPos = -9999;
+   double phaseL = -9999;
+   double phaseR = -9999;
+   double Zpos = -9999;
+   double Ypos = -9999;
+   double qdc = -9999;
+   double aqdc = -9999;
+   int modNum = -9999;
+   double psd = -9999;
+   double tdiff = -9999;
+   unsigned int sNum = 0; //start detector number
+   int vMulti = 0;
+   double sTime = -9999;
+   double sQdc = -9999;
+};
+
 struct PSPMT {
     double energy = -999;
     double time = -999;
@@ -141,7 +161,7 @@ struct SINGLEBETA {
 }; 
 static const SINGLEBETA SINGLEBETA_DEFAULT_STRUCT;
 
-struct VANDLES {
+struct VANDLE {
     std::string barType = "";
     double tof = -999;
     double corTof = -999;
@@ -157,7 +177,7 @@ struct VANDLES {
     double sTime = -999;
     double sQdc = -999;
 };
-static const VANDLES VANDLES_DEFAULT_STRUCT;
+static const VANDLE VANDLES_DEFAULT_STRUCT;
 }  // namespace processor_struct
 
 class PixTreeEvent : public TObject {
@@ -175,7 +195,8 @@ class PixTreeEvent : public TObject {
         doublebeta_vec_ = obj.doublebeta_vec_;
         gamma_scint_vec_ = obj.gamma_scint_vec_;
         logic_vec_ = obj.logic_vec_;
-	mtas_vec_ = obj.mtas_vec_;
+        mtas_vec_ = obj.mtas_vec_;
+        next_vec_ = obj.next_vec_;
         pspmt_vec_ = obj.pspmt_vec_;
         root_dev_vec_ = obj.root_dev_vec_;
         singlebeta_vec_ = obj.singlebeta_vec_;
@@ -196,6 +217,7 @@ class PixTreeEvent : public TObject {
         gamma_scint_vec_.clear();
         logic_vec_.clear();
 	mtas_vec_.clear();
+        next_vec_.clear();
         pspmt_vec_.clear();
         root_dev_vec_.clear();
         singlebeta_vec_.clear();
@@ -213,10 +235,11 @@ class PixTreeEvent : public TObject {
     std::vector<processor_struct::GAMMASCINT> gamma_scint_vec_;
     std::vector<processor_struct::LOGIC> logic_vec_;
     std::vector<processor_struct::MTAS> mtas_vec_;
+    std::vector<processor_struct::NEXT> next_vec_;
     std::vector<processor_struct::PSPMT> pspmt_vec_;
     std::vector<processor_struct::ROOTDEV> root_dev_vec_;
     std::vector<processor_struct::SINGLEBETA> singlebeta_vec_;
-    std::vector<processor_struct::VANDLES> vandle_vec_;
+    std::vector<processor_struct::VANDLE> vandle_vec_;
 
     ClassDef(PixTreeEvent, 1)
 };
