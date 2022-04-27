@@ -1,10 +1,10 @@
-/** @file MtasProcessor.hpp
- * @brief  Basic MtasProcessor for MTAS at FRIB
- * @authors T.T. King, T. Ruland, B.C. Rasco
- * @date 03/25/2022
+/** @file BSMProcessor.hpp
+ * @brief  Basic BSMProcessor
+ * @author T. Ruland
+ * @date 04/25/2022
  */
-#ifndef PAASS_MtasProcessor_H
-#define PAASS_MtasProcessor_H
+#ifndef PAASS_BSMProcessor_H
+#define PAASS_BSMProcessor_H
 
 #include <utility>
 
@@ -15,18 +15,18 @@
 
 #include <utility>
 
-class MtasSegment {
+class BSMSegment {
 	public: 
 		/** Constructor */
-		MtasSegment(bool zerosuppress){
+		BSMSegment(bool zerosuppress){
 			segFront_ = nullptr;
 			segBack_ = nullptr;
-			gMtasSegID_ = -1;
+			gBSMSegID_ = -1;
 			HasZeroSuppression = zerosuppress;
 
 		};
 		/** Destructor */
-		~MtasSegment() = default;
+		~BSMSegment() = default;
 		bool IsValidSegment() const { return segBack_ != nullptr and segFront_ != nullptr; }
 		std::pair<double,bool> GetSegmentPosition() const{
 			if( IsValidSegment() ){
@@ -72,20 +72,21 @@ class MtasSegment {
 		}
 
 	public:
-		int gMtasSegID_;
+		int gBSMSegID_;
 		ChanEvent* segFront_;
 		ChanEvent* segBack_ ;
 		std::string PixieRev;
 		bool HasZeroSuppression;
 };
 
-class MtasProcessor : public EventProcessor {
+
+class BSMProcessor : public EventProcessor {
 	public:
 		/**Constructor */
-		MtasProcessor(bool,bool);
+		BSMProcessor(int,bool,bool);
 
 		/** Deconstructor */
-		~MtasProcessor() = default;
+		~BSMProcessor() = default;
 
 		/** Preprocess the event
 		 * \param [in] event : the event to preprocess
@@ -104,11 +105,12 @@ class MtasProcessor : public EventProcessor {
 		void DeclarePlots(void);
 
 	private:
-		//processor_struct::MTAS Mtasstruct;  //!<Root Struct
 		std::string PixieRev; //! pixie revision
-		bool IsNewCenter;
+		int NumSegments;
 		bool HasZeroSuppression;
+		bool StandAlone;
 
+		pair<double,bool> BSMTotal;
 };
 
-#endif  //PAASS_MtasProcessor_H
+#endif  //PAASS_BSMProcessor_H
