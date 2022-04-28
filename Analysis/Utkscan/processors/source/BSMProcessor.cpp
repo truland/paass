@@ -152,7 +152,8 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 		}else{
 				PreviousTime = CurrTime;
 				CurrTime = EarliestTime;
-				plot(D_TDIFF_EVENTS,(CurrTime - PreviousTime));
+				plot(D_TDIFF_EVENTS,(CurrTime - PreviousTime)*clockInSeconds*1.0e9);
+				//cout << (CurrTime - PreviousTime)*clockInSeconds*1.0e9 << endl;
 		}
 	}
 
