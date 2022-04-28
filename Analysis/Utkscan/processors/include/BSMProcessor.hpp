@@ -63,6 +63,33 @@ class BSMSegment {
 				return std::make_pair(segFront_->GetCalibratedEnergy(),true);
 			}
 		}
+		std::pair<double,bool> GetFrontTimeInNS() const{
+			double clockInSeconds;
+			if (PixieRev == "F"){
+				clockInSeconds = Globals::get()->GetClockInSeconds(segFront_->GetChanID().GetModFreq());
+			} else {
+				clockInSeconds = Globals::get()->GetClockInSeconds();
+			}
+			if( segFront_ == nullptr ){
+				return std::make_pair(0.0,not HasZeroSuppression);
+			}else{
+				return std::make_pair(segFront_->GetTimeSansCfd() * clockInSeconds * 1.0e9,true);
+			}
+		}
+		std::pair<double,bool> GetBackTimeInNS() const{
+			double clockInSeconds;
+			if (PixieRev == "F"){
+				clockInSeconds = Globals::get()->GetClockInSeconds(segFront_->GetChanID().GetModFreq());
+			} else {
+				clockInSeconds = Globals::get()->GetClockInSeconds();
+			}
+			if( segBack_ == nullptr ){
+				return std::make_pair(0.0,not HasZeroSuppression);
+			}else{
+				return std::make_pair(segBack_->GetTimeSansCfd() * clockInSeconds * 1.0e9,true);
+			}
+		}
+
 		std::pair<double,bool> GetBackEnergy() const{
 			if( segBack_ == nullptr ){
 				return std::make_pair(0.0,not HasZeroSuppression);
