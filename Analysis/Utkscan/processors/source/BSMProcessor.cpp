@@ -137,7 +137,7 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 	}else{
 	       	if( FrontTime.second and BackTime.second ) {
 			PreviousTime = CurrTime;
-			CurrTime = EarliestTime;
+			CurrTime = EarliestTime*clockInSeconds;
 			plot(D_TDIFF_EVENTS,(CurrTime - PreviousTime));
 		}
 	}
