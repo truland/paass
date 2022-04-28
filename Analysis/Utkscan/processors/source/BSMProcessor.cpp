@@ -28,10 +28,15 @@ namespace dammIds {
 		const unsigned TOTAL_OFFSET = 0;
 		const unsigned DD_OFFSET = 250;
 
+		const unsigned D_TIMING_OFFSET = 300;
+
 		const unsigned D_BSM_TOTAL = TOTAL_OFFSET; 
 		const unsigned D_BSM_MTAS_SUM = TOTAL_OFFSET + 1;
 		const unsigned D_BSM_ZERO_MTAS = TOTAL_OFFSET + 2;
+
 		const unsigned DD_BSM_MTAS_TOTAL = DD_OFFSET; 
+
+		const unsigned D_TDIFF_EVENTS = D_TIMING_OFFSET;
 	}
 }
 using namespace std;
@@ -42,6 +47,7 @@ void BSMProcessor::DeclarePlots(void){
 	DeclareHistogram1D(D_BSM_MTAS_SUM,SE,"BSM Total + MTAS Total");
 	DeclareHistogram1D(D_BSM_ZERO_MTAS,SE,"BSM Total No MTAS");
 	DeclareHistogram2D(DD_BSM_MTAS_TOTAL,SD,SD,"BSM Total vs MTAS Total");
+	DeclareHistogram1D(D_TDIFF_EVENTS,SE,"Tdiff between bsm events");
 }
 
 
@@ -51,6 +57,7 @@ BSMProcessor::BSMProcessor(int numsegments,bool zerosuppress,bool alone) : Event
 	NumSegments = numsegments;
 	HasZeroSuppression = zerosuppress;
 	StandAlone = alone;
+	FoundFirst = false;
 }
 
 bool BSMProcessor::PreProcess(RawEvent &event) {
@@ -109,6 +116,15 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 				BSMSegVec.at(segmentNum).PixieRev = PixieRev;
 			}
 		}
+	}
+
+	if( not FoundFirst ){
+		FoundFirst = true;
+		CurrTime = EarliestTime;
+	}else{
+		PreviousTime = CurrTime;
+		CurrTime = EarliestTime;
+		plot(D_TDIFF_EVENTS,(CurrTime - PreviousTime));
 	}
 
 	//reset this during pre-process
