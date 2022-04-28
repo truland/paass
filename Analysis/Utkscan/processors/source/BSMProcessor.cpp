@@ -129,9 +129,11 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 		}
 	}
 
-	if( not FoundFirst and (FrontTime.second and BackTime.second) ){
-		FoundFirst = true;
-		CurrTime = clockInSeconds*EarliestTime;
+	if( not FoundFirst ){
+	       	if (FrontTime.second and BackTime.second) {
+			FoundFirst = true;
+			CurrTime = clockInSeconds*EarliestTime;
+		}
 	}else{
 	       	if( FrontTime.second and BackTime.second ) {
 			PreviousTime = CurrTime;
