@@ -114,7 +114,7 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 			if(isFront && BSMSegVec.at(segmentNum).segFront_ == nullptr){  
 				if( (*chanEvtIter)->GetTimeSansCfd() < EarliestTime )
 					EarliestTime = (*chanEvtIter)->GetTimeSansCfd(); 
-				FrontTime = BSMSegVec.at(segmentNum).GetFrontTimeInNS();
+				//FrontTime = BSMSegVec.at(segmentNum).GetFrontTimeInNS();
 				BSMSegVec.at(segmentNum).segFront_ = (*chanEvtIter);
 				BSMSegVec.at(segmentNum).PixieRev = PixieRev;
 			}
@@ -122,7 +122,7 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 			else if (isBack && BSMSegVec.at(segmentNum).segBack_ == nullptr) { 
 				if( (*chanEvtIter)->GetTimeSansCfd() < EarliestTime )
 					EarliestTime = (*chanEvtIter)->GetTimeSansCfd(); 
-				BackTime = BSMSegVec.at(segmentNum).GetBackTimeInNS();
+				//BackTime = BSMSegVec.at(segmentNum).GetBackTimeInNS();
 				BSMSegVec.at(segmentNum).segBack_ = (*chanEvtIter);
 				BSMSegVec.at(segmentNum).PixieRev = PixieRev;
 			}
@@ -130,16 +130,16 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 	}
 
 	if( not FoundFirst ){
-	       	if (FrontTime.second and BackTime.second) {
+	       	//if (FrontTime.second and BackTime.second) {
 			FoundFirst = true;
 			CurrTime = EarliestTime*clockInSeconds;
-		}
+		//}
 	}else{
-	       	if( FrontTime.second and BackTime.second ) {
+	       	//if( FrontTime.second and BackTime.second ) {
 			PreviousTime = CurrTime;
 			CurrTime = EarliestTime*clockInSeconds;
 			plot(D_TDIFF_EVENTS,(CurrTime - PreviousTime));
-		}
+		//}
 	}
 
 	//reset this during pre-process
