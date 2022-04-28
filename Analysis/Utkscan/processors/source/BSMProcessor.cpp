@@ -129,19 +129,6 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 		}
 	}
 
-	if( not FoundFirst ){
-	       	//if (FrontTime.second and BackTime.second) {
-			FoundFirst = true;
-			CurrTime = EarliestTime*clockInSeconds;
-		//}
-	}else{
-	       	//if( FrontTime.second and BackTime.second ) {
-			PreviousTime = CurrTime;
-			CurrTime = EarliestTime*clockInSeconds;
-			plot(D_TDIFF_EVENTS,(CurrTime - PreviousTime));
-		//}
-	}
-
 	//reset this during pre-process
 	BSMTotal = make_pair(0,not HasZeroSuppression);
 	int NumFire = 0;
@@ -157,6 +144,15 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 		}else{
 			BSMTotal.first += result.first/static_cast<double>(NumFire);
 			BSMTotal.second = true;	
+		}
+
+		if( not FoundFirst ){
+				FoundFirst = true;
+				CurrTime = EarliestTime;
+		}else{
+				PreviousTime = CurrTime;
+				CurrTime = EarliestTime;
+				plot(D_TDIFF_EVENTS,(CurrTime - PreviousTime));
 		}
 	}
 
