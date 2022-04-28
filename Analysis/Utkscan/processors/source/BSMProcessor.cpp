@@ -132,10 +132,12 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 	if( not FoundFirst and (FrontTime.second and BackTime.second) ){
 		FoundFirst = true;
 		CurrTime = clockInSeconds*EarliestTime;
-	}else if( FrontTime.second and BackTime.second) {
-		PreviousTime = CurrTime;
-		CurrTime = EarliestTime;
-		plot(D_TDIFF_EVENTS,(CurrTime - PreviousTime));
+	}else{
+	       	if( FrontTime.second and BackTime.second ) {
+			PreviousTime = CurrTime;
+			CurrTime = EarliestTime;
+			plot(D_TDIFF_EVENTS,(CurrTime - PreviousTime));
+		}
 	}
 
 	//reset this during pre-process
