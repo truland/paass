@@ -61,6 +61,7 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 	vector<BSMSegment> BSMSegVec(NumSegments,BSMSegment(HasZeroSuppression));
 	vector<short> BSMSegMulti(2*NumSegments,0); // MTAS segment multiplicity "map"
 
+	double EarliestTime = 1.0e99;
 	for (auto chanEvtIter = chanEvents.begin(); chanEvtIter != chanEvents.end(); ++chanEvtIter){
 		int segmentNum = stoi((*chanEvtIter)->GetChanID().GetGroup().c_str()) - 1;
 
@@ -95,11 +96,15 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 
 			BSMSegVec.at(segmentNum).gBSMSegID_ = segmentNum;
 			if(isFront && BSMSegVec.at(segmentNum).segFront_ == nullptr){  
+				if( (*chanEvtIter)->GetTimeSansCfd() < EarliestTime )
+					EarliestTime = (*chanEvtIter)->GetTimeSansCfd(); 
 				BSMSegVec.at(segmentNum).segFront_ = (*chanEvtIter);
 				BSMSegVec.at(segmentNum).PixieRev = PixieRev;
 			}
 			//! Thomas Ruland Gets a gold star 
 			else if (isBack && BSMSegVec.at(segmentNum).segBack_ == nullptr) { 
+				if( (*chanEvtIter)->GetTimeSansCfd() < EarliestTime )
+					EarliestTime = (*chanEvtIter)->GetTimeSansCfd(); 
 				BSMSegVec.at(segmentNum).segBack_ = (*chanEvtIter);
 				BSMSegVec.at(segmentNum).PixieRev = PixieRev;
 			}
@@ -127,6 +132,9 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 	if( BSMTotal.second )
 		plot(D_BSM_TOTAL,BSMTotal.first);
 
+	EventData TotalData(EarliestTime,BSMTotal.first);
+	TreeCorrelator::get()->place("BSM_Total")->activate(TotalData);
+
 	return true;
 }
 
@@ -141,8 +149,8 @@ bool BSMProcessor::Process(RawEvent &event) {
 			//	cout << e.energy << " " << e.time << '\t';
 			//cout << endl;
 			if( BSMTotal.second and mtas_total->info_.size() > 0 ){
-				plot(DD_BSM_MTAS_TOTAL,mtas_total->info_.at(0).energy,BSMTotal.first);
-				plot(D_BSM_MTAS_SUM,mtas_total->info_.at(0).energy + BSMTotal.first);
+				plot(DD_BSM_MTAS_TOTAL,mtas_total->last().energy,BSMTotal.first);
+				plot(D_BSM_MTAS_SUM,mtas_total->last().energy + BSMTotal.first);
 			}
 		}else{
 			if( BSMTotal.second ){
@@ -152,12 +160,8 @@ bool BSMProcessor::Process(RawEvent &event) {
 			}
 		}
 	}else{
-		//if( BSMTotal.second ){
-		//		plot(DD_BSM_MTAS_TOTAL,0.0,BSMTotal.first);
-		//		plot(D_BSM_MTAS_SUM,BSMTotal.first);
-		//}
-		//if( not StandAlone )
-		//	throw "ERROR BSMProcessor::Process BSM isn't in standalone mode and the treecorrelator for MTAS_Total isn't setup";
+		if( not StandAlone )
+			throw "ERROR BSMProcessor::Process BSM isn't in standalone mode and the treecorrelator for MTAS_Total isn't setup";
 	}
 
 	EndProcess();

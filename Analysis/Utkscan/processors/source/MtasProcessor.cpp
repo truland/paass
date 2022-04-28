@@ -47,6 +47,12 @@ namespace dammIds {
 		const unsigned D_MTAS_MIDDLE = MIDDLE_OFFSET;
 		const unsigned D_MTAS_OUTER = OUTER_OFFSET;
 
+		const unsigned D_MTAS_BETA_TOTAL = TOTAL_OFFSET + BETA_GATED_OFFSET;
+		const unsigned D_MTAS_BETA_CENTER = CENTER_OFFSET + BETA_GATED_OFFSET;
+		const unsigned D_MTAS_BETA_INNER = INNER_OFFSET + BETA_GATED_OFFSET;
+		const unsigned D_MTAS_BETA_MIDDLE = MIDDLE_OFFSET + BETA_GATED_OFFSET;
+		const unsigned D_MTAS_BETA_OUTER = OUTER_OFFSET + BETA_GATED_OFFSET;
+
 		const unsigned D_MTAS_TOTAL_INDI = TOTAL_OFFSET + INDIVIDUALS_OFFSET;
 		const unsigned D_MTAS_CENTER_INDI = CENTER_OFFSET + INDIVIDUALS_OFFSET;
 		const unsigned D_MTAS_INNER_INDI = INNER_OFFSET + INDIVIDUALS_OFFSET;
@@ -78,6 +84,12 @@ void MtasProcessor::DeclarePlots(void){
 	DeclareHistogram1D(D_MTAS_INNER,SE, "Mtas INNER");
 	DeclareHistogram1D(D_MTAS_MIDDLE,SE, "Mtas MIDDLE");
 	DeclareHistogram1D(D_MTAS_OUTER,SE, "Mtas OUTER");
+
+	DeclareHistogram1D(D_MTAS_BETA_TOTAL,SE, "Mtas Beta TOTAL");
+	DeclareHistogram1D(D_MTAS_BETA_CENTER,SE, "Mtas Beta CENTER");
+	DeclareHistogram1D(D_MTAS_BETA_INNER,SE, "Mtas Beta INNER");
+	DeclareHistogram1D(D_MTAS_BETA_MIDDLE,SE, "Mtas Beta MIDDLE");
+	DeclareHistogram1D(D_MTAS_BETA_OUTER,SE, "Mtas Beta OUTER");
 
 	DeclareHistogram1D(D_MTAS_TOTAL_INDI,SE, "Mtas TOTAL Individuals");
 	DeclareHistogram1D(D_MTAS_CENTER_INDI,SE, "Mtas CENTER Individuals");
@@ -149,11 +161,12 @@ void MtasProcessor::DeclarePlots(void){
 }
 
 
-MtasProcessor::MtasProcessor(bool newcenter,bool zerosuppress) : EventProcessor(OFFSET, RANGE, "MtasProcessor") {
+MtasProcessor::MtasProcessor(bool newcenter,bool zerosuppress,double thresh) : EventProcessor(OFFSET, RANGE, "MtasProcessor") {
 	associatedTypes.insert("mtas");
 	PixieRev = Globals::get()->GetPixieRevision();
 	IsNewCenter = newcenter;
 	HasZeroSuppression = zerosuppress;
+	BetaThreshold = thresh;
 }
 
 bool MtasProcessor::PreProcess(RawEvent &event) {
@@ -162,7 +175,7 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 
 	static const auto &chanEvents = event.GetSummary("mtas", true)->GetList();
 
-	vector<MtasSegment> MtasSegVec(24, MtasSegment(HasZeroSuppression));
+	MtasSegVec = vector<MtasSegment>(24, MtasSegment(HasZeroSuppression));
 	vector<short> MtasSegMulti(48,0); // MTAS segment multiplicity "map"
 
 	double EarliestTime = 1.0e99;
@@ -232,11 +245,11 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 	}  //! end loop over chanEvents.
 
 	//! begin loop over segments for sums
-	pair<double,bool> centerSum = make_pair(0,not HasZeroSuppression);
-	pair<double,bool> innerSum = make_pair(0,not HasZeroSuppression);
-	pair<double,bool> middleSum = make_pair(0,not HasZeroSuppression);
-	pair<double,bool> outerSum = make_pair(0,not HasZeroSuppression);
-	pair<double,bool> totalSum = make_pair(0,not HasZeroSuppression);
+	centerSum = make_pair(0,not HasZeroSuppression);
+	innerSum = make_pair(0,not HasZeroSuppression);
+	middleSum = make_pair(0,not HasZeroSuppression);
+	outerSum = make_pair(0,not HasZeroSuppression);
+	totalSum = make_pair(0,not HasZeroSuppression);
 	int NumCenter = 0;
 	for( auto ii = 0; ii < 6; ++ii ){
 		if( MtasSegVec.at(ii).IsValidSegment() )
@@ -409,30 +422,30 @@ bool MtasProcessor::Process(RawEvent &event) {
 	if (!EventProcessor::Process(event))
 		return false;
 
-	//! This is ROOT output stuff
-	// for (auto it = Events.begin(); it != Events.end(); it++) {
-	//     Mtasstruct.energy = (*it)->GetCalibratedEnergy();
-	//     Mtasstruct.rawEnergy = (*it)->GetEnergy();
-	//     if (Rev == "F") {
-	//         Mtasstruct.timeSansCfd = (*it)->GetTimeSansCfd() * Globals::get()->GetClockInSeconds((*it)->GetChanID().GetModFreq()) * 1e9;
-	//         Mtasstruct.time = (*it)->GetTime() * Globals::get()->GetAdcClockInSeconds((*it)->GetChanID().GetModFreq()) * 1e9;
-	//     } else {
-	//         Mtasstruct.timeSansCfd = (*it)->GetTimeSansCfd() * Globals::get()->GetClockInSeconds() * 1e9;
-	//         Mtasstruct.time = (*it)->GetTime() * Globals::get()->GetAdcClockInSeconds() * 1e9;
-	//     }
-	//     Mtasstruct.detNum = (*it)->GetChanID().GetLocation();
-	//     Mtasstruct.modNum = (*it)->GetModuleNumber();
-	//     Mtasstruct.chanNum = (*it)->GetChannelNumber();
-	//     Mtasstruct.subtype = (*it)->GetChanID().GetSubtype();
-	//     Mtasstruct.group = (*it)->GetChanID().GetGroup();
-	//     Mtasstruct.pileup = (*it)->IsPileup();
-	//     Mtasstruct.saturation = (*it)->IsSaturated();
-
-	//     pixie_tree_event_->mtas_vec_.emplace_back(Mtasstruct);
-	//     Mtasstruct = processor_struct::Mtas_DEFAULT_STRUCT;
-	// }
-
-	//!---- END root output stuff
+	bool isBeta = false;
+	if(TreeCorrelator::get()->checkPlace("BSM_Total")){
+		//This is the BSM beta gated stuff
+		if(TreeCorrelator::get()->place("BSM_Total")->status()){
+			PlaceDetector* bsm_total = dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("BSM_Total")); 
+		
+			if( bsm_total->info_.size() > 0 and bsm_total->last().energy >= BetaThreshold ){
+				isBeta = true;
+			}
+			
+			if( isBeta ){
+				if( totalSum.second )
+					plot(D_MTAS_BETA_TOTAL,totalSum.first);
+				if( centerSum.second )
+					plot(D_MTAS_BETA_CENTER, centerSum.first);
+				if( innerSum.second )
+					plot(D_MTAS_BETA_INNER, innerSum.first);
+				if( middleSum.second )
+					plot(D_MTAS_BETA_MIDDLE, middleSum.first);
+				if( outerSum.second )
+					plot(D_MTAS_BETA_OUTER, outerSum.first);
+			}
+		}
+	}
 
 	EndProcess();
 	return true;

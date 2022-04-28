@@ -82,7 +82,7 @@ class MtasSegment {
 class MtasProcessor : public EventProcessor {
 	public:
 		/**Constructor */
-		MtasProcessor(bool,bool);
+		MtasProcessor(bool,bool,double);
 
 		/** Deconstructor */
 		~MtasProcessor() = default;
@@ -108,6 +108,14 @@ class MtasProcessor : public EventProcessor {
 		std::string PixieRev; //! pixie revision
 		bool IsNewCenter;
 		bool HasZeroSuppression;
+		double BetaThreshold;
+	
+		std::vector<MtasSegment> MtasSegVec;
+		std::pair<double,bool> centerSum;
+		std::pair<double,bool> innerSum;
+		std::pair<double,bool> middleSum;
+		std::pair<double,bool> outerSum;
+		std::pair<double,bool> totalSum;
 
 };
 
