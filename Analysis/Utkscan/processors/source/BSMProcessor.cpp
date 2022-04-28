@@ -69,8 +69,17 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 	vector<short> BSMSegMulti(2*NumSegments,0); // MTAS segment multiplicity "map"
 
 	double EarliestTime = 1.0e99;
+	pair<double,bool> FrontTime = {-1.0,not HasZeroSuppression};
+	pair<double,bool> BackTime = {-1.0,not HasZeroSuppression};
+	double clockInSeconds;
 	for (auto chanEvtIter = chanEvents.begin(); chanEvtIter != chanEvents.end(); ++chanEvtIter){
 		int segmentNum = stoi((*chanEvtIter)->GetChanID().GetGroup().c_str()) - 1;
+
+		if (PixieRev == "F"){
+			clockInSeconds = Globals::get()->GetClockInSeconds((*chanEvtIter)->GetChanID().GetModFreq());
+		} else {
+			clockInSeconds = Globals::get()->GetClockInSeconds();
+		}
 
 		bool isFront = (*chanEvtIter)->GetChanID().HasTag("front");
 		bool isBack = (*chanEvtIter)->GetChanID().HasTag("back");
@@ -105,6 +114,7 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 			if(isFront && BSMSegVec.at(segmentNum).segFront_ == nullptr){  
 				if( (*chanEvtIter)->GetTimeSansCfd() < EarliestTime )
 					EarliestTime = (*chanEvtIter)->GetTimeSansCfd(); 
+				FrontTime = BSMSegVec.at(segmentNum).GetFrontTimeInNS();
 				BSMSegVec.at(segmentNum).segFront_ = (*chanEvtIter);
 				BSMSegVec.at(segmentNum).PixieRev = PixieRev;
 			}
@@ -112,15 +122,16 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 			else if (isBack && BSMSegVec.at(segmentNum).segBack_ == nullptr) { 
 				if( (*chanEvtIter)->GetTimeSansCfd() < EarliestTime )
 					EarliestTime = (*chanEvtIter)->GetTimeSansCfd(); 
+				BackTime = BSMSegVec.at(segmentNum).GetFrontTimeInNS();
 				BSMSegVec.at(segmentNum).segBack_ = (*chanEvtIter);
 				BSMSegVec.at(segmentNum).PixieRev = PixieRev;
 			}
 		}
 	}
 
-	if( not FoundFirst ){
+	if( not FoundFirst and (FrontTime.second and BackTime.second) ){
 		FoundFirst = true;
-		CurrTime = EarliestTime;
+		CurrTime = clockInSeconds*EarliestTime;
 	}else{
 		PreviousTime = CurrTime;
 		CurrTime = EarliestTime;
