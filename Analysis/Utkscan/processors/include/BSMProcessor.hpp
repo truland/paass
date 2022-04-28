@@ -110,7 +110,10 @@ class BSMProcessor : public EventProcessor {
 		bool HasZeroSuppression;
 		bool StandAlone;
 
-		pair<double,bool> BSMTotal;
+		bool FoundFirst;
+		double PreviousTime;
+		double CurrTime;
+		std::pair<double,bool> BSMTotal;
 };
 
 #endif  //PAASS_BSMProcessor_H
