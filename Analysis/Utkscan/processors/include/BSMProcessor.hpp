@@ -137,9 +137,6 @@ class BSMProcessor : public EventProcessor {
 		bool HasZeroSuppression;
 		bool StandAlone;
 
-		bool FoundFirst;
-		double PreviousTime;
-		double CurrTime;
 		std::pair<double,bool> BSMTotal;
 };
 
