@@ -26,17 +26,15 @@ namespace dammIds {
 	namespace bsm {
 		//6500 is beginning, 500 range
 		const unsigned TOTAL_OFFSET = 0;
+		
 		const unsigned DD_OFFSET = 250;
-
-		const unsigned D_TIMING_OFFSET = 300;
 
 		const unsigned D_BSM_TOTAL = TOTAL_OFFSET; 
 		const unsigned D_BSM_MTAS_SUM = TOTAL_OFFSET + 1;
 		const unsigned D_BSM_ZERO_MTAS = TOTAL_OFFSET + 2;
 
 		const unsigned DD_BSM_MTAS_TOTAL = DD_OFFSET; 
-
-		const unsigned D_TDIFF_EVENTS = D_TIMING_OFFSET;
+		const unsigned DD_BSM_F_B = DD_OFFSET + 1;
 	}
 }
 using namespace std;
@@ -46,8 +44,9 @@ void BSMProcessor::DeclarePlots(void){
 	DeclareHistogram1D(D_BSM_TOTAL,SE,"BSM Total");
 	DeclareHistogram1D(D_BSM_MTAS_SUM,SE,"BSM Total + MTAS Total");
 	DeclareHistogram1D(D_BSM_ZERO_MTAS,SE,"BSM Total No MTAS");
+
 	DeclareHistogram2D(DD_BSM_MTAS_TOTAL,SD,SD,"BSM Total vs MTAS Total");
-	DeclareHistogram1D(D_TDIFF_EVENTS,SE,"Tdiff between bsm events");
+	DeclareHistogram2D(DD_BSM_F_B,SD,SD,"BSM Front Avg vs BSM Back Avg");
 }
 
 
@@ -57,7 +56,6 @@ BSMProcessor::BSMProcessor(int numsegments,bool zerosuppress,bool alone) : Event
 	NumSegments = numsegments;
 	HasZeroSuppression = zerosuppress;
 	StandAlone = alone;
-	FoundFirst = false;
 }
 
 bool BSMProcessor::PreProcess(RawEvent &event) {
@@ -69,8 +67,6 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 	vector<short> BSMSegMulti(2*NumSegments,0); // MTAS segment multiplicity "map"
 
 	double EarliestTime = 1.0e99;
-	pair<double,bool> FrontTime = {-1.0,not HasZeroSuppression};
-	pair<double,bool> BackTime = {-1.0,not HasZeroSuppression};
 	double clockInSeconds;
 	for (auto chanEvtIter = chanEvents.begin(); chanEvtIter != chanEvents.end(); ++chanEvtIter){
 		int segmentNum = stoi((*chanEvtIter)->GetChanID().GetGroup().c_str()) - 1;
@@ -114,7 +110,6 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 			if(isFront && BSMSegVec.at(segmentNum).segFront_ == nullptr){  
 				if( (*chanEvtIter)->GetTimeSansCfd() < EarliestTime )
 					EarliestTime = (*chanEvtIter)->GetTimeSansCfd(); 
-				//FrontTime = BSMSegVec.at(segmentNum).GetFrontTimeInNS();
 				BSMSegVec.at(segmentNum).segFront_ = (*chanEvtIter);
 				BSMSegVec.at(segmentNum).PixieRev = PixieRev;
 			}
@@ -122,7 +117,6 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 			else if (isBack && BSMSegVec.at(segmentNum).segBack_ == nullptr) { 
 				if( (*chanEvtIter)->GetTimeSansCfd() < EarliestTime )
 					EarliestTime = (*chanEvtIter)->GetTimeSansCfd(); 
-				//BackTime = BSMSegVec.at(segmentNum).GetBackTimeInNS();
 				BSMSegVec.at(segmentNum).segBack_ = (*chanEvtIter);
 				BSMSegVec.at(segmentNum).PixieRev = PixieRev;
 			}
@@ -131,6 +125,8 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 
 	//reset this during pre-process
 	BSMTotal = make_pair(0,not HasZeroSuppression);
+	pair<double,bool> FrontAvg = make_pair(0,not HasZeroSuppression);
+	pair<double,bool> BackAvg = make_pair(0,not HasZeroSuppression);
 	int NumFire = 0;
 	for( auto& segIter : BSMSegVec ){
 		if( segIter.IsValidSegment() )
@@ -139,26 +135,24 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 	
 	for( auto& segIter : BSMSegVec ){
 		auto result = segIter.GetSegmentAverageEnergy();
+		auto frontresult = segIter.GetFrontEnergy();
+		auto backresult = segIter.GetBackEnergy();
 		if( not result.second ){
 			continue;
 		}else{
 			BSMTotal.first += result.first/static_cast<double>(NumFire);
 			BSMTotal.second = true;	
-		}
-
-		if( not FoundFirst ){
-				FoundFirst = true;
-				CurrTime = EarliestTime;
-		}else{
-				PreviousTime = CurrTime;
-				CurrTime = EarliestTime;
-				plot(D_TDIFF_EVENTS,(CurrTime - PreviousTime)*clockInSeconds*1.0e6);
-				//cout << (CurrTime - PreviousTime)*clockInSeconds*1.0e9 << endl;
+			FrontAvg.first += frontresult.first/static_cast<double>(NumFire);
+			FrontAvg.second = true;
+			BackAvg.first += backresult.first/static_cast<double>(NumFire);
+			BackAvg.second = true;
 		}
 	}
 
 	if( BSMTotal.second )
 		plot(D_BSM_TOTAL,BSMTotal.first);
+	if( FrontAvg.first or BackAvg.first )
+		plot(DD_BSM_F_B,FrontAvg.first,BackAvg.first);
 
 	EventData TotalData(EarliestTime,BSMTotal.first);
 	TreeCorrelator::get()->place("BSM_Total")->activate(TotalData);
