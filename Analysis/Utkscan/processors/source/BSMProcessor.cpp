@@ -45,8 +45,8 @@ void BSMProcessor::DeclarePlots(void){
 	DeclareHistogram1D(D_BSM_MTAS_SUM,SE,"BSM Total + MTAS Total");
 	DeclareHistogram1D(D_BSM_ZERO_MTAS,SE,"BSM Total No MTAS");
 
-	DeclareHistogram2D(DD_BSM_MTAS_TOTAL,SD,SD,"BSM Total vs MTAS Total");
-	DeclareHistogram2D(DD_BSM_F_B,SD,SD,"BSM Front Avg vs BSM Back Avg");
+	DeclareHistogram2D(DD_BSM_MTAS_TOTAL,SC,SC,"BSM Total vs MTAS Total");
+	DeclareHistogram2D(DD_BSM_F_B,SC,SC,"BSM Front Avg vs BSM Back Avg");
 }
 
 
@@ -151,7 +151,7 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 
 	if( BSMTotal.second )
 		plot(D_BSM_TOTAL,BSMTotal.first);
-	if( FrontAvg.first or BackAvg.first )
+	if( FrontAvg.second or BackAvg.second )
 		plot(DD_BSM_F_B,FrontAvg.first,BackAvg.first);
 
 	EventData TotalData(EarliestTime,BSMTotal.first);
