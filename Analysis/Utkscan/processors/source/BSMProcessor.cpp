@@ -26,12 +26,15 @@ namespace dammIds {
 	namespace bsm {
 		//6500 is beginning, 500 range
 		const unsigned TOTAL_OFFSET = 0;
+		const unsigned POS_OFFSET = 100;
 		
 		const unsigned DD_OFFSET = 250;
 
 		const unsigned D_BSM_TOTAL = TOTAL_OFFSET; 
 		const unsigned D_BSM_MTAS_SUM = TOTAL_OFFSET + 1;
 		const unsigned D_BSM_ZERO_MTAS = TOTAL_OFFSET + 2;
+
+		const unsigned D_BSM_POSITION = POS_OFFSET;
 
 		const unsigned DD_BSM_MTAS_TOTAL = DD_OFFSET; 
 		const unsigned DD_BSM_F_B = DD_OFFSET + 1;
@@ -44,6 +47,8 @@ void BSMProcessor::DeclarePlots(void){
 	DeclareHistogram1D(D_BSM_TOTAL,SE,"BSM Total");
 	DeclareHistogram1D(D_BSM_MTAS_SUM,SE,"BSM Total + MTAS Total");
 	DeclareHistogram1D(D_BSM_ZERO_MTAS,SE,"BSM Total No MTAS");
+
+	DeclareHistogram1D(D_BSM_POSITION,SD,"BSM Position");
 
 	DeclareHistogram2D(DD_BSM_MTAS_TOTAL,SC,SC,"BSM Total vs MTAS Total");
 	DeclareHistogram2D(DD_BSM_F_B,SC,SC,"BSM Front Avg vs BSM Back Avg");
@@ -151,8 +156,10 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 
 	if( BSMTotal.second )
 		plot(D_BSM_TOTAL,BSMTotal.first);
-	if( FrontAvg.second or BackAvg.second )
+	if( FrontAvg.second or BackAvg.second ){
 		plot(DD_BSM_F_B,FrontAvg.first,BackAvg.first);
+		plot(D_BSM_POSITION,(SD/2)*(1.0+((FrontAvg.first-BackAvg.first)/(FrontAvg.first+BackAvg.first))));
+	}
 
 	EventData TotalData(EarliestTime,BSMTotal.first);
 	TreeCorrelator::get()->place("BSM_Total")->activate(TotalData);
