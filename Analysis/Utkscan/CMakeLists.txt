@@ -47,6 +47,7 @@ add_subdirectory(experiment)
 add_subdirectory(processors)
 
 #added by T.T. King for Vector Root Libs
+cmake_policy(SET CMP0068 OLD)
 SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 SET(CMAKE_SKIP_INSTALL_RPATH FALSE)
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
@@ -54,11 +55,13 @@ SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 
-ROOT_GENERATE_DICTIONARY(PaassRootStruct PaassRootStruct.hpp LINKDEF core/include/PaassRootLinkDef.hpp )
-add_library(PaassRootStruct SHARED PaassRootStruct.cxx PaassRootStruct)
+ROOT_GENERATE_DICTIONARY(PaassRootStruct_root PaassRootStruct.hpp LINKDEF core/include/PaassRootLinkDef.hpp )
+add_library(PaassRootStruct SHARED PaassRootStruct_root.cxx PaassRootStruct_root)
+target_link_libraries(PaassRootStruct ${ROOT_LIBRARIES})  
 
-ROOT_GENERATE_DICTIONARY(MMTASStruct MMTASStruct.hpp LINKDEF core/include/MMTASLinkDef.hpp )
-add_library(MMTASStruct SHARED MMTASStruct.cxx MMTASStruct)
+ROOT_GENERATE_DICTIONARY(MMTASStruct_root MMTASStruct.hpp LINKDEF core/include/MMTASLinkDef.hpp )
+add_library(MMTASStruct SHARED MMTASStruct_root.cxx MMTASStruct_root)
+target_link_libraries(MMTASStruct ${ROOT_LIBRARIES})  
 
 #End T.T. King Additions
 #------------------------------------------------------------------------------
@@ -71,8 +74,8 @@ if (NOT PAASS_USE_HRIBF)
             $<TARGET_OBJECTS:UtkscanAnalyzerObjects>
             $<TARGET_OBJECTS:UtkscanProcessorObjects>
             $<TARGET_OBJECTS:UtkscanExperimentObjects>
-            PaassRootStruct.cxx
-	    MMTASStruct.cxx)
+            PaassRootStruct_root.cxx
+	    MMTASStruct_root.cxx)
 else (PAASS_USE_HRIBF)
     set(SCAN_NAME utkscanor)
     add_executable(${SCAN_NAME}
@@ -82,8 +85,8 @@ else (PAASS_USE_HRIBF)
             $<TARGET_OBJECTS:UtkscanProcessorObjects>
             $<TARGET_OBJECTS:UtkscanExperimentObjects>
             $<TARGET_OBJECTS:ScanorObjects>
-            PaassRootStruct.cxx
-	    MMTASStruct.cxx)
+            PaassRootStruct_root.cxx
+	    MMTASStruct_root.cxx)
     target_link_libraries(utkscanor ${HRIBF_LIBRARIES})
 endif (NOT PAASS_USE_HRIBF)
 
@@ -109,6 +112,8 @@ install(FILES ${CMAKE_SOURCE_DIR}/Analysis/Utkscan/core/include/MMTASStruct.hpp 
 install(FILES ${CMAKE_SOURCE_DIR}/Analysis/Utkscan/processors/include/GSaddback.hpp DESTINATION include/)
 #Install the ROOT 6 PCM.
 if (${ROOT_VERSION} VERSION_GREATER "6.0")
-    install( FILES ${CMAKE_CURRENT_BINARY_DIR}/PaassRootStruct_rdict.pcm DESTINATION lib/)
-    install( FILES ${CMAKE_CURRENT_BINARY_DIR}/MMTASStruct_rdict.pcm DESTINATION lib/)
+    install( FILES ${CMAKE_CURRENT_BINARY_DIR}/libPaassRootStruct_root_rdict.pcm DESTINATION lib/)
+    install( FILES ${CMAKE_CURRENT_BINARY_DIR}/libMMTASStruct_root_rdict.pcm DESTINATION lib/)
+    install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_INSTALL_PREFIX}/lib/libPaassRootStruct_root_rdict.pcm ${CMAKE_INSTALL_PREFIX}/bin/libPaassRootStruct_root_rdict.pcm)")
+    install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_INSTALL_PREFIX}/lib/libMMTASStruct_root_rdict.pcm ${CMAKE_INSTALL_PREFIX}/bin/libMMTASStruct_root_rdict.pcm)")
 endif (${ROOT_VERSION} VERSION_GREATER "6.0")
