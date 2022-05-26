@@ -147,17 +147,20 @@ void MtasProcessor::DeclarePlots(void){
 	DeclareHistogram2D(DD_MTAS_CS_T,SD,SD,"Mtas Center Segment vs Total");
 	DeclareHistogram2D(DD_MTAS_IMO_T,SD,SD,"Mtas I,M,O Segment vs Total");
 	DeclareHistogram2D(DD_MTAS_C1_POSITION,SD,SD,"Mtas C1 vs Position");
-	DeclareHistogram2D(DD_MTAS_C1_C2,SD,SD,"Mtas C1 vs C2");
-	DeclareHistogram2D(DD_MTAS_C1_C6,SD,SD,"Mtas C1 vs C6");
-	DeclareHistogram2D(DD_MTAS_C3_C2,SD,SD,"Mtas C3 vs C2");
-	DeclareHistogram2D(DD_MTAS_C3_C4,SD,SD,"Mtas C3 vs C4");
-	DeclareHistogram2D(DD_MTAS_C5_C4,SD,SD,"Mtas C5 vs C4");
-	DeclareHistogram2D(DD_MTAS_C5_C6,SD,SD,"Mtas C5 vs C6");
-	DeclareHistogram2D(DD_MTAS_C1_C3,SD,SD,"Mtas C1 vs C3");
-	DeclareHistogram2D(DD_MTAS_C1_C4,SD,SD,"Mtas C1 vs C4");
-	DeclareHistogram2D(DD_MTAS_C1_C5,SD,SD,"Mtas C1 vs C5");
+	//DeclareHistogram2D(DD_MTAS_C1_C2,SD,SD,"Mtas C1 vs C2");
+	//DeclareHistogram2D(DD_MTAS_C1_C6,SD,SD,"Mtas C1 vs C6");
+	//DeclareHistogram2D(DD_MTAS_C3_C2,SD,SD,"Mtas C3 vs C2");
+	//DeclareHistogram2D(DD_MTAS_C3_C4,SD,SD,"Mtas C3 vs C4");
+	//DeclareHistogram2D(DD_MTAS_C5_C4,SD,SD,"Mtas C5 vs C4");
+	//DeclareHistogram2D(DD_MTAS_C5_C6,SD,SD,"Mtas C5 vs C6");
+	//DeclareHistogram2D(DD_MTAS_C1_C3,SD,SD,"Mtas C1 vs C3");
+	//DeclareHistogram2D(DD_MTAS_C1_C4,SD,SD,"Mtas C1 vs C4");
+	//DeclareHistogram2D(DD_MTAS_C1_C5,SD,SD,"Mtas C1 vs C5");
 
 	DeclareHistogram2D(D_ONE_OFFS + 0, S6, S6, "Mtas Multiplicity x=ID y=multi");
+	DeclareHistogram1D(D_ONE_OFFS + 1,SE,"Isomer Energy");
+	DeclareHistogram2D(D_ONE_OFFS + 2,SD,SD,"Time since Last Beta Event vs Total");
+	DeclareHistogram2D(D_ONE_OFFS + 3,SD,SD,"Isomeric BSM vs MTAS Total");
 }
 
 
@@ -167,6 +170,7 @@ MtasProcessor::MtasProcessor(bool newcenter,bool zerosuppress,double thresh) : E
 	IsNewCenter = newcenter;
 	HasZeroSuppression = zerosuppress;
 	BetaThreshold = thresh;
+	IsPrevBetaTriggered = false;
 }
 
 bool MtasProcessor::PreProcess(RawEvent &event) {
@@ -180,6 +184,12 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 
 	double EarliestTime = 1.0e99;
 	for (auto chanEvtIter = chanEvents.begin(); chanEvtIter != chanEvents.end(); ++chanEvtIter){
+
+		if (PixieRev == "F"){
+			clockInSeconds = Globals::get()->GetClockInSeconds((*chanEvtIter)->GetChanID().GetModFreq());
+		} else {
+			clockInSeconds = Globals::get()->GetClockInSeconds();
+		}
 		//! needs try/catch for non numeric string in group
 		int segmentNum = stoi((*chanEvtIter)->GetChanID().GetGroup().c_str());
 		string Ring = StringManipulation::StringLower((*chanEvtIter)->GetChanID().GetSubtype());
@@ -414,6 +424,7 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 	//place MTAS_Total so other classes have access to it
 	EventData TotalData(EarliestTime,totalSum.first);
 	TreeCorrelator::get()->place("MTAS_Total")->activate(TotalData);
+	SignalTime = EarliestTime;
 
 	return true;
 }
@@ -433,6 +444,9 @@ bool MtasProcessor::Process(RawEvent &event) {
 			}
 			
 			if( isBeta ){
+				IsPrevBetaTriggered = true;
+				PrevBetaTime = SignalTime;
+				PrevBetaEnergy = bsm_total->last().energy;
 				if( totalSum.second )
 					plot(D_MTAS_BETA_TOTAL,totalSum.first);
 				if( centerSum.second )
@@ -443,6 +457,13 @@ bool MtasProcessor::Process(RawEvent &event) {
 					plot(D_MTAS_BETA_MIDDLE, middleSum.first);
 				if( outerSum.second )
 					plot(D_MTAS_BETA_OUTER, outerSum.first);
+			}
+		}else{
+			if( IsPrevBetaTriggered ){
+				IsPrevBetaTriggered = false;
+				plot(D_ONE_OFFS + 1,totalSum.first);
+				plot(D_ONE_OFFS + 2,totalSum.first,(SignalTime - PrevBetaTime)*clockInSeconds*1.0e6);
+				plot(D_ONE_OFFS + 3,totalSum.first,PrevBetaEnergy);
 			}
 		}
 	}
