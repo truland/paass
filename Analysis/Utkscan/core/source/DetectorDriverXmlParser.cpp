@@ -111,10 +111,14 @@ vector<EventProcessor *> DetectorDriverXmlParser::ParseProcessors(const pugi::xm
                 processor.attribute("gamma_beta_limit").as_double(200.e-9),
                 processor.attribute("energy_contraction").as_double(1.0)));
 	} else if (name == "BSMProcessor" ){
+		vector<pair<double,double>> MTASGates;
+		for(pugi::xml_node gate = processor.child("MTASGate"); gate; gate = gate.next_sibling("MTASGate") )
+			MTASGates.push_back(make_pair(gate.attribute("min").as_double(0.0),gate.attribute("max").as_double(1.0)));
 		vecProcess.push_back(new BSMProcessor(
 			processor.attribute("num_segments").as_int(1),
 			processor.attribute("zero_suppress").as_bool(false),
-			processor.attribute("stand_alone").as_bool(false)
+			processor.attribute("stand_alone").as_bool(false),
+			MTASGates
 		));	
         } else if (name == "CloverCalibProcessor") {
             vecProcess.push_back(new CloverCalibProcessor(

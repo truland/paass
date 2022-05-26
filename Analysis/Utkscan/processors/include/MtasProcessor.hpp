@@ -108,7 +108,13 @@ class MtasProcessor : public EventProcessor {
 		std::string PixieRev; //! pixie revision
 		bool IsNewCenter;
 		bool HasZeroSuppression;
+		bool IsPrevBetaTriggered;
 		double BetaThreshold;
+
+		double SignalTime;
+		double PrevBetaEnergy;
+		double PrevBetaTime;
+		double clockInSeconds;
 	
 		std::vector<MtasSegment> MtasSegVec;
 		std::pair<double,bool> centerSum;
@@ -116,7 +122,6 @@ class MtasProcessor : public EventProcessor {
 		std::pair<double,bool> middleSum;
 		std::pair<double,bool> outerSum;
 		std::pair<double,bool> totalSum;
-
 };
 
 #endif  //PAASS_MtasProcessor_H
