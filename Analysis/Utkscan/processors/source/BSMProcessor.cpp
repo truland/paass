@@ -12,6 +12,7 @@
 #include <iostream>
 #include <sstream>
 #include <utility>
+#include <vector>
 
 #include "DetectorDriver.hpp"
 #include "DetectorLibrary.hpp"
@@ -33,11 +34,15 @@ namespace dammIds {
 		const unsigned D_BSM_TOTAL = TOTAL_OFFSET; 
 		const unsigned D_BSM_MTAS_SUM = TOTAL_OFFSET + 1;
 		const unsigned D_BSM_ZERO_MTAS = TOTAL_OFFSET + 2;
+		const unsigned D_BSM_MTAS_GATES = TOTAL_OFFSET + 10;
 
 		const unsigned D_BSM_POSITION = POS_OFFSET;
 
 		const unsigned DD_BSM_MTAS_TOTAL = DD_OFFSET; 
-		const unsigned DD_BSM_F_B = DD_OFFSET + 1;
+		const unsigned DD_BSM_TOTAL_POS = DD_OFFSET + 1;
+		const unsigned DD_BSM_TOTAL_POS_ZERO_MTAS = DD_OFFSET + 2;
+		const unsigned DD_BSM_TOTAL_POS_MTAS_GATES = DD_OFFSET + 10;
+		const unsigned DD_BSM_F_B = DD_OFFSET + 20;
 	}
 }
 using namespace std;
@@ -47,20 +52,38 @@ void BSMProcessor::DeclarePlots(void){
 	DeclareHistogram1D(D_BSM_TOTAL,SE,"BSM Total");
 	DeclareHistogram1D(D_BSM_MTAS_SUM,SE,"BSM Total + MTAS Total");
 	DeclareHistogram1D(D_BSM_ZERO_MTAS,SE,"BSM Total No MTAS");
+	for( unsigned int ii = 0; ii < NumGates; ++ii ){
+		string hisname = "BSM MTAS T["+to_string((int)MTASGates.at(ii).first)+","+to_string((int)MTASGates.at(ii).second)+"]";
+		DeclareHistogram1D(D_BSM_MTAS_GATES+ii,SE,hisname.c_str());
+	}
 
 	DeclareHistogram1D(D_BSM_POSITION,SD,"BSM Position");
 
 	DeclareHistogram2D(DD_BSM_MTAS_TOTAL,SC,SC,"BSM Total vs MTAS Total");
 	DeclareHistogram2D(DD_BSM_F_B,SC,SC,"BSM Front Avg vs BSM Back Avg");
+	DeclareHistogram2D(DD_BSM_TOTAL_POS,SD,SC,"BSM Energy vs Position");
+	DeclareHistogram2D(DD_BSM_TOTAL_POS_ZERO_MTAS,SD,SC,"BSM Energy vs Position No MTAS");
+	for( unsigned int ii = 0; ii < NumGates; ++ii ){
+		string hisname = "BSM Energy vs Position MTAS T["+to_string((int)MTASGates.at(ii).first)+","+to_string((int)MTASGates.at(ii).second)+"]";
+		DeclareHistogram2D(DD_BSM_TOTAL_POS_MTAS_GATES+ii,SD,SC,hisname.c_str());
+	}
+
 }
 
 
-BSMProcessor::BSMProcessor(int numsegments,bool zerosuppress,bool alone) : EventProcessor(OFFSET, RANGE, "BSMProcessor") {
+BSMProcessor::BSMProcessor(int numsegments,bool zerosuppress,bool alone,vector<pair<double,double>> mtasgates) : EventProcessor(OFFSET, RANGE, "BSMProcessor") {
 	associatedTypes.insert("bsm");
 	PixieRev = Globals::get()->GetPixieRevision();
 	NumSegments = numsegments;
 	HasZeroSuppression = zerosuppress;
 	StandAlone = alone;
+	MTASGates = mtasgates;
+	if( MTASGates.size() > MaxGates )
+		cout << "Cannot have more than " << MaxGates << " MTAS gates for the BSM. Only the first " << MaxGates << " will be used" << endl;
+	NumGates = (MTASGates.size() <= MaxGates) ? MTASGates.size() : MaxGates;
+	cout << "Using " << NumGates << " MTAS Gates for the BSM" << endl;
+	for( unsigned int ii = 0; ii < NumGates; ++ii )
+		cout << " Gate " << ii << " : [" << MTASGates.at(ii).first << "," << MTASGates.at(ii).second << "]" << endl;
 }
 
 bool BSMProcessor::PreProcess(RawEvent &event) {
@@ -158,7 +181,9 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 		plot(D_BSM_TOTAL,BSMTotal.first);
 	if( FrontAvg.second or BackAvg.second ){
 		plot(DD_BSM_F_B,FrontAvg.first,BackAvg.first);
+		BSMPosition = (SD/2)*(1.0+((FrontAvg.first-BackAvg.first)/(FrontAvg.first+BackAvg.first)));
 		plot(D_BSM_POSITION,(SD/2)*(1.0+((FrontAvg.first-BackAvg.first)/(FrontAvg.first+BackAvg.first))));
+		plot(DD_BSM_TOTAL_POS,(SD/2)*(1.0+((FrontAvg.first-BackAvg.first)/(FrontAvg.first+BackAvg.first))),BSMTotal.first);
 	}
 
 	EventData TotalData(EarliestTime,BSMTotal.first);
@@ -178,14 +203,22 @@ bool BSMProcessor::Process(RawEvent &event) {
 			//	cout << e.energy << " " << e.time << '\t';
 			//cout << endl;
 			if( BSMTotal.second and mtas_total->info_.size() > 0 ){
-				plot(DD_BSM_MTAS_TOTAL,mtas_total->last().energy,BSMTotal.first);
-				plot(D_BSM_MTAS_SUM,mtas_total->last().energy + BSMTotal.first);
+				double MTASTotal = mtas_total->last().energy;
+				plot(DD_BSM_MTAS_TOTAL,MTASTotal,BSMTotal.first);
+				plot(D_BSM_MTAS_SUM,MTASTotal + BSMTotal.first);
+				for( unsigned int ii = 0; ii < NumGates; ++ii ){
+					if( MTASTotal >= MTASGates.at(ii).first and MTASTotal <= MTASGates.at(ii).second ){
+						plot(D_BSM_MTAS_GATES+ii,BSMTotal.first);
+						plot(DD_BSM_TOTAL_POS_MTAS_GATES+ii,BSMPosition,BSMTotal.first);
+					}	
+				}
 			}
 		}else{
 			if( BSMTotal.second ){
-					plot(D_BSM_ZERO_MTAS,BSMTotal.first);
-					plot(DD_BSM_MTAS_TOTAL,0.0,BSMTotal.first);
-					plot(D_BSM_MTAS_SUM,BSMTotal.first);
+				plot(D_BSM_ZERO_MTAS,BSMTotal.first);
+				plot(DD_BSM_TOTAL_POS_ZERO_MTAS,BSMPosition,BSMTotal.first);
+				plot(DD_BSM_MTAS_TOTAL,0.0,BSMTotal.first);
+				plot(D_BSM_MTAS_SUM,BSMTotal.first);
 			}
 		}
 	}else{

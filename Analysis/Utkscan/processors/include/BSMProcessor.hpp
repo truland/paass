@@ -13,6 +13,7 @@
 #include "RawEvent.hpp"
 #include "Globals.hpp"
 
+#include <vector>
 #include <utility>
 
 class BSMSegment {
@@ -110,7 +111,7 @@ class BSMSegment {
 class BSMProcessor : public EventProcessor {
 	public:
 		/**Constructor */
-		BSMProcessor(int,bool,bool);
+		BSMProcessor(int,bool,bool,std::vector<std::pair<double,double>>);
 
 		/** Deconstructor */
 		~BSMProcessor() = default;
@@ -138,6 +139,11 @@ class BSMProcessor : public EventProcessor {
 		bool StandAlone;
 
 		std::pair<double,bool> BSMTotal;
+		double BSMPosition;
+
+		std::vector<std::pair<double,double>> MTASGates;
+		const unsigned int MaxGates = 10;
+		unsigned int NumGates;
 };
 
 #endif  //PAASS_BSMProcessor_H
