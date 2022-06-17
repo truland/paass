@@ -184,6 +184,7 @@ bool GammaScintFragProcessor::Process(RawEvent &event) {
     //start actual event loop
     for (auto it = GSEvents_.begin(); it != GSEvents_.end(); it++) {
         double currentModFreq = (*it)->GetChanID().GetModFreq();
+	(void) currentModFreq;//suppress UnusedVariable warning
         string subType = (*it)->GetChanID().GetSubtype();
         unsigned int subTypeOffset = ReturnOffset(subType);
         double Genergy = (*it)->GetCalibratedEnergy();
