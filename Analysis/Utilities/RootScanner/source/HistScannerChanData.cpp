@@ -39,6 +39,7 @@ void HistScannerChanData::Set(XiaData *data) {
 
     //Do not delete as it causes segfault.
     ProcessedXiaData *chEvent = new ProcessedXiaData(*data);
+    (void) chEvent; //this no-op removes the UnusedVariable flag from being tripped when compiling
 
     //baseline[mod][chan] = chEvent->CorrectBaseline();
 
