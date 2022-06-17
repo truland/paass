@@ -216,13 +216,24 @@ vector<EventProcessor *> DetectorDriverXmlParser::ParseProcessors(const pugi::xm
         } else if (name == "McpProcessor") {
             vecProcess.push_back(new McpProcessor());
         } else if (name == "MtasProcessor") {
-            vecProcess.push_back(new MtasProcessor());
+            vecProcess.push_back(new MtasProcessor(
+		processor.attribute("HasBetaInfo").as_bool(true),
+		processor.attribute("BetaMinEnergy").as_double(1.0),
+		processor.attribute("BetaMaxEnergy").as_double(16384.0),
+		processor.attribute("IonMinEnergy").as_double(1.0),
+		processor.attribute("IonMaxEnergy").as_double(16384.0)
+				    ));
         } else if (name == "MtasImplantSipmProcessor"){
             vecProcess.push_back(new MtasImplantSipmProcessor(
                 processor.attribute("yso_scale").as_double(100.0),
                 processor.attribute("yso_offset").as_uint(1400.0),
                 processor.attribute("yso_threshold").as_double(50.0),
-                processor.attribute("oqdc_yso_threshold").as_double(1400.0)));
+                processor.attribute("oqdc_yso_threshold").as_double(1400.0),
+                processor.attribute("dyh_thresh").as_double(50.0),
+                processor.attribute("dyh_qdc_thresh").as_double(50.0),
+                processor.attribute("dyl_thresh").as_double(50.0),
+                processor.attribute("dyl_qdc_thresh").as_double(50.0),
+                processor.attribute("dyh_upper_thresh").as_double(50.0)));
         } else if (name == "NeutronScintProcessor") {
             vecProcess.push_back(new NeutronScintProcessor());
         } else if (name == "PositionProcessor") {
