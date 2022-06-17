@@ -109,8 +109,8 @@ function(ROOT_GENERATE_DICTIONARY dictionary)
     endforeach ()
     #---call rootcint------------------------------------------
     add_custom_command(OUTPUT ${dictionary}.cxx ${dictionary}.h
-            COMMAND ${ROOTCINT_EXECUTABLE} -cint -f ${dictionary}.cxx
-            -c ${ARG_OPTIONS} ${includedirs} ${headerfiles} ${linkdefs}
+            COMMAND ${ROOTCINT_EXECUTABLE}  -f ${dictionary}.cxx
+            ${ARG_OPTIONS} ${includedirs} ${headerfiles} ${linkdefs}
             DEPENDS ${headerfiles} ${linkdefs} VERBATIM)
 endfunction()
 
