@@ -139,6 +139,7 @@ class BSMProcessor : public EventProcessor {
 		bool StandAlone;
 
 		std::pair<double,bool> BSMTotal;
+		std::vector<BSMSegment> BSMSegVec;
 		double BSMPosition;
 
 		std::vector<std::pair<double,double>> MTASGates;

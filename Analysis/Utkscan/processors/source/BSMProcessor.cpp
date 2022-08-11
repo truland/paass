@@ -55,6 +55,7 @@ void BSMProcessor::DeclarePlots(void){
 	for( unsigned int ii = 0; ii < NumGates; ++ii ){
 		string hisname = "BSM MTAS T["+to_string((int)MTASGates.at(ii).first)+","+to_string((int)MTASGates.at(ii).second)+"]";
 		DeclareHistogram1D(D_BSM_MTAS_GATES+ii,SE,hisname.c_str());
+		DeclareHistogram2D(D_BSM_MTAS_GATES+(NumGates + ii),SD,S4,("Raw "+hisname).c_str());
 	}
 
 	DeclareHistogram1D(D_BSM_POSITION,SD,"BSM Position");
@@ -91,7 +92,8 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 		return false;
 
 	static const auto &chanEvents = event.GetSummary("bsm", true)->GetList();
-	vector<BSMSegment> BSMSegVec(NumSegments,BSMSegment(HasZeroSuppression));
+	//vector<BSMSegment> BSMSegVec(NumSegments,BSMSegment(HasZeroSuppression));
+	BSMSegVec = vector<BSMSegment>(NumSegments,BSMSegment(HasZeroSuppression));
 	vector<short> BSMSegMulti(2*NumSegments,0); // MTAS segment multiplicity "map"
 
 	double EarliestTime = 1.0e99;
@@ -210,6 +212,10 @@ bool BSMProcessor::Process(RawEvent &event) {
 					if( MTASTotal >= MTASGates.at(ii).first and MTASTotal <= MTASGates.at(ii).second ){
 						plot(D_BSM_MTAS_GATES+ii,BSMTotal.first);
 						plot(DD_BSM_TOTAL_POS_MTAS_GATES+ii,BSMPosition,BSMTotal.first);
+						for( size_t jj = 0; jj < BSMSegVec.size(); ++jj ){
+							plot(D_BSM_MTAS_GATES+(NumGates + ii ),BSMSegVec.at(jj).GetFrontEnergy().first,2*jj);
+							plot(D_BSM_MTAS_GATES+(NumGates + ii ),BSMSegVec.at(jj).GetBackEnergy().first,2*jj + 1);
+						}
 					}	
 				}
 			}
