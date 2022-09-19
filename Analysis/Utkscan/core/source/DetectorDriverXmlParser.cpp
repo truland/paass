@@ -118,7 +118,8 @@ vector<EventProcessor *> DetectorDriverXmlParser::ParseProcessors(const pugi::xm
 			processor.attribute("num_segments").as_int(1),
 			processor.attribute("zero_suppress").as_bool(false),
 			processor.attribute("stand_alone").as_bool(false),
-			MTASGates
+			MTASGates,
+			processor.attribute("thresh").as_double(0.0)
 		));	
         } else if (name == "CloverCalibProcessor") {
             vecProcess.push_back(new CloverCalibProcessor(
