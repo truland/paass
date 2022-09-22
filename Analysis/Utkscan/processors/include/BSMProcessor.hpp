@@ -15,6 +15,7 @@
 
 #include <vector>
 #include <utility>
+#include <functional>
 
 class BSMSegment {
 	public: 
@@ -111,7 +112,7 @@ class BSMSegment {
 class BSMProcessor : public EventProcessor {
 	public:
 		/**Constructor */
-		BSMProcessor(int,bool,bool,std::vector<std::pair<double,double>>,double);
+		BSMProcessor(int,bool,bool,std::vector<std::pair<double,double>>,double,double,double,double,double);
 
 		/** Deconstructor */
 		~BSMProcessor() = default;
@@ -138,6 +139,10 @@ class BSMProcessor : public EventProcessor {
 		bool HasZeroSuppression;
 		bool StandAlone;
 		double Threshold;
+		double MeanEnergy;
+		double a_0;
+		double a_1;
+		double a_2;
 
 		std::pair<double,bool> BSMTotal;
 		std::pair<double,bool> FrontAvg;

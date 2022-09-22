@@ -114,12 +114,25 @@ vector<EventProcessor *> DetectorDriverXmlParser::ParseProcessors(const pugi::xm
 		vector<pair<double,double>> MTASGates;
 		for(pugi::xml_node gate = processor.child("MTASGate"); gate; gate = gate.next_sibling("MTASGate") )
 			MTASGates.push_back(make_pair(gate.attribute("min").as_double(0.0),gate.attribute("max").as_double(1.0)));
+		pugi::xml_node poscorrection = processor.child("PositionCorrection");
+		double meanerg = 1.0;
+		double a0 = meanerg;
+		double a1 = 0.0;
+		double a2 = 0.0;
+		if( poscorrection ){
+			meanerg= poscorrection.attribute("EnergyMean").as_double(1.0);
+			a0 = poscorrection.attribute("a0").as_double(meanerg);
+			a1 = poscorrection.attribute("a1").as_double(0.0);
+			a2 = poscorrection.attribute("a2").as_double(0.0);
+		}
 		vecProcess.push_back(new BSMProcessor(
 			processor.attribute("num_segments").as_int(1),
 			processor.attribute("zero_suppress").as_bool(false),
 			processor.attribute("stand_alone").as_bool(false),
 			MTASGates,
-			processor.attribute("thresh").as_double(0.0)
+			processor.attribute("thresh").as_double(0.0),
+			meanerg,
+			a0, a1, a2
 		));	
         } else if (name == "CloverCalibProcessor") {
             vecProcess.push_back(new CloverCalibProcessor(
