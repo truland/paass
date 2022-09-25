@@ -85,11 +85,10 @@ void BSMProcessor::DeclarePlots(void){
 }
 
 
-BSMProcessor::BSMProcessor(int numsegments,bool zerosuppress,bool alone,vector<pair<double,double>> mtasgates,double thresh,double energymean,double a0,double a1,double a2) : EventProcessor(OFFSET, RANGE, "BSMProcessor") {
+BSMProcessor::BSMProcessor(int numsegments,bool alone,vector<pair<double,double>> mtasgates,double thresh,double fc,double fs,double fm,double bc,double bs,double bm) : EventProcessor(OFFSET, RANGE, "BSMProcessor") {
 	associatedTypes.insert("bsm");
 	PixieRev = Globals::get()->GetPixieRevision();
 	NumSegments = numsegments;
-	HasZeroSuppression = zerosuppress;
 	StandAlone = alone;
 	MTASGates = mtasgates;
 	if( MTASGates.size() > MaxGates )
@@ -99,19 +98,20 @@ BSMProcessor::BSMProcessor(int numsegments,bool zerosuppress,bool alone,vector<p
 	for( unsigned int ii = 0; ii < NumGates; ++ii )
 		cout << "       * Gate " << ii << " : [" << MTASGates.at(ii).first << "," << MTASGates.at(ii).second << "]" << endl;
 	Threshold = thresh;
-	MeanEnergy = energymean;
-	a_0 = a0;
-	a_1 = a1;
-	a_2 = a2;
+	FrontCorrection.constant = fc;
+	FrontCorrection.slope = fs;
+	FrontCorrection.mean = fm;
+	BackCorrection.constant = bc;
+	BackCorrection.slope = bs;
+	BackCorrection.mean = bm;
 }
-
+		
 bool BSMProcessor::PreProcess(RawEvent &event) {
 	if (!EventProcessor::PreProcess(event))
 		return false;
 
 	static const auto &chanEvents = event.GetSummary("bsm", true)->GetList();
-	//vector<BSMSegment> BSMSegVec(NumSegments,BSMSegment(HasZeroSuppression));
-	BSMSegVec = vector<BSMSegment>(NumSegments,BSMSegment(HasZeroSuppression));
+	BSMSegVec = vector<BSMSegment>(NumSegments,BSMSegment());
 	vector<short> BSMSegMulti(2*NumSegments,0); // MTAS segment multiplicity "map"
 
 	double EarliestTime = 1.0e99;
@@ -172,9 +172,9 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 	}
 
 	//reset this during pre-process
-	BSMTotal = make_pair(0,not HasZeroSuppression);
-	FrontAvg = make_pair(0,not HasZeroSuppression);
-	BackAvg = make_pair(0,not HasZeroSuppression);
+	BSMTotal = 0;
+	FrontAvg = 0;
+	BackAvg = 0;
 	int NumFire = 0;
 	for( auto& segIter : BSMSegVec ){
 		if( segIter.IsValidSegment() )
@@ -185,33 +185,28 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 		auto result = segIter.GetSegmentAverageEnergy();
 		auto frontresult = segIter.GetFrontEnergy();
 		auto backresult = segIter.GetBackEnergy();
-		if( not result.second ){
-			continue;
-		}else{
-			BSMTotal.first += result.first/static_cast<double>(NumFire);
-			BSMTotal.second = true;	
-			FrontAvg.first += frontresult.first/static_cast<double>(NumFire);
-			FrontAvg.second = true;
-			BackAvg.first += backresult.first/static_cast<double>(NumFire);
-			BackAvg.second = true;
-		}
+		//BSMTotal.first += result.first/static_cast<double>(NumFire);
+		//BSMTotal.second = true;	
+		FrontAvg += frontresult/static_cast<double>(NumFire);
+		BackAvg += backresult/static_cast<double>(NumFire);
 	}
+	BSMPosition = (SD/2)*(1.0+((FrontAvg-BackAvg)/(FrontAvg+BackAvg)));
+	FrontAvg = FrontCorrection.Correct(FrontAvg,BSMPosition);
+	BackAvg = BackCorrection.Correct(BackAvg,BSMPosition);
+	BSMTotal = (FrontAvg + BackAvg)/static_cast<double>(2*NumFire);
 
 	//Do we only do position correction on Total??????
 	//How do we handle the front and back avg
 	//or do we handle the front and back position correction separately
 
-	if( BSMTotal.second )
-		plot(D_BSM_TOTAL,BSMTotal.first);
-	if( FrontAvg.second or BackAvg.second ){
-		plot(DD_BSM_F_B,FrontAvg.first,BackAvg.first);
-		plot(DD_BSM_TOTAL_AVG,BSMTotal.first,sqrt(FrontAvg.first*BackAvg.first));
-		BSMPosition = (SD/2)*(1.0+((FrontAvg.first-BackAvg.first)/(FrontAvg.first+BackAvg.first)));
-		plot(D_BSM_POSITION,(SD/2)*(1.0+((FrontAvg.first-BackAvg.first)/(FrontAvg.first+BackAvg.first))));
-		plot(DD_BSM_TOTAL_POS,(SD/2)*(1.0+((FrontAvg.first-BackAvg.first)/(FrontAvg.first+BackAvg.first))),BSMTotal.first);
-	}
+	plot(D_BSM_TOTAL,BSMTotal);
+	plot(DD_BSM_F_B,FrontAvg,BackAvg);
+	plot(DD_BSM_TOTAL_AVG,BSMTotal,sqrt(FrontAvg*BackAvg));
+	BSMPosition = (SD/2)*(1.0+((FrontAvg-BackAvg)/(FrontAvg+BackAvg)));
+	plot(D_BSM_POSITION,(SD/2)*(1.0+((FrontAvg-BackAvg)/(FrontAvg+BackAvg))));
+	plot(DD_BSM_TOTAL_POS,(SD/2)*(1.0+((FrontAvg-BackAvg)/(FrontAvg+BackAvg))),BSMTotal);
 
-	EventData TotalData(EarliestTime,BSMTotal.first);
+	EventData TotalData(EarliestTime,BSMTotal);
 	TreeCorrelator::get()->place("BSM_Total")->activate(TotalData);
 
 	return true;
@@ -227,33 +222,31 @@ bool BSMProcessor::Process(RawEvent &event) {
 			//for( auto& e : mtas_total->info_ )
 			//	cout << e.energy << " " << e.time << '\t';
 			//cout << endl;
-			if( BSMTotal.second and mtas_total->info_.size() > 0 ){
+			if( mtas_total->info_.size() > 0 ){
 				double MTASTotal = mtas_total->last().energy;
-				plot(DD_BSM_MTAS_TOTAL,MTASTotal,BSMTotal.first);
-				plot(D_BSM_MTAS_SUM,MTASTotal + BSMTotal.first);
+				plot(DD_BSM_MTAS_TOTAL,MTASTotal,BSMTotal);
+				plot(D_BSM_MTAS_SUM,MTASTotal + BSMTotal);
 				for( unsigned int ii = 0; ii < NumGates; ++ii ){
 					plot(DD_BSM_MTAS_GATES,ii,MTASGates.at(ii).first);
 					plot(DD_BSM_MTAS_GATES,ii,MTASGates.at(ii).second);
 					if( MTASTotal >= MTASGates.at(ii).first and MTASTotal <= MTASGates.at(ii).second ){
-						plot(D_BSM_MTAS_GATES+ii,BSMTotal.first);
-						plot(DD_BSM_TOTAL_POS_MTAS_GATES+ii,BSMPosition,BSMTotal.first);
-						plot(DD_BSM_F_POS_MTAS_GATES+ii,BSMPosition,FrontAvg.first);
-						plot(DD_BSM_B_POS_MTAS_GATES+ii,BSMPosition,BackAvg.first);
+						plot(D_BSM_MTAS_GATES+ii,BSMTotal);
+						plot(DD_BSM_TOTAL_POS_MTAS_GATES+ii,BSMPosition,BSMTotal);
+						plot(DD_BSM_F_POS_MTAS_GATES+ii,BSMPosition,FrontAvg);
+						plot(DD_BSM_B_POS_MTAS_GATES+ii,BSMPosition,BackAvg);
 						for( size_t jj = 0; jj < BSMSegVec.size(); ++jj ){
-							plot(D_BSM_MTAS_GATES+(NumGates + ii ),BSMSegVec.at(jj).GetFrontEnergy().first,2*jj);
-							plot(D_BSM_MTAS_GATES+(NumGates + ii ),BSMSegVec.at(jj).GetBackEnergy().first,2*jj + 1);
+							plot(D_BSM_MTAS_GATES+(NumGates + ii ),BSMSegVec.at(jj).GetFrontEnergy(),2*jj);
+							plot(D_BSM_MTAS_GATES+(NumGates + ii ),BSMSegVec.at(jj).GetBackEnergy(),2*jj + 1);
 						}
-						plot(DD_BSM_F_B_MTAS_GATES+ii,FrontAvg.first,BackAvg.first);
+						plot(DD_BSM_F_B_MTAS_GATES+ii,FrontAvg,BackAvg);
 					}	
 				}
 			}
 		}else{
-			if( BSMTotal.second ){
-				plot(D_BSM_ZERO_MTAS,BSMTotal.first);
-				plot(DD_BSM_TOTAL_POS_ZERO_MTAS,BSMPosition,BSMTotal.first);
-				plot(DD_BSM_MTAS_TOTAL,0.0,BSMTotal.first);
-				plot(D_BSM_MTAS_SUM,BSMTotal.first);
-			}
+			plot(D_BSM_ZERO_MTAS,BSMTotal);
+			plot(DD_BSM_TOTAL_POS_ZERO_MTAS,BSMPosition,BSMTotal);
+			plot(DD_BSM_MTAS_TOTAL,0.0,BSMTotal);
+			plot(D_BSM_MTAS_SUM,BSMTotal);
 		}
 	}else{
 		if( not StandAlone )
