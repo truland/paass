@@ -16,36 +16,35 @@
 #include <vector>
 #include <utility>
 #include <functional>
+#include <cmath>
 
 class BSMSegment {
 	public: 
 		/** Constructor */
-		BSMSegment(bool zerosuppress){
+		BSMSegment(){
 			segFront_ = nullptr;
 			segBack_ = nullptr;
 			gBSMSegID_ = -1;
-			HasZeroSuppression = zerosuppress;
-
 		};
 		/** Destructor */
 		~BSMSegment() = default;
 		bool IsValidSegment() const { return segBack_ != nullptr and segFront_ != nullptr; }
-		std::pair<double,bool> GetSegmentPosition() const{
+		double GetSegmentPosition() const{
 			if( IsValidSegment() ){
-				return std::make_pair((segFront_->GetCalibratedEnergy() - segBack_->GetCalibratedEnergy())/(segFront_->GetCalibratedEnergy() + segBack_->GetCalibratedEnergy()),true);
+				return (segFront_->GetCalibratedEnergy() - segBack_->GetCalibratedEnergy())/(segFront_->GetCalibratedEnergy() + segBack_->GetCalibratedEnergy());
 			}else{
-				return std::make_pair(0.0,not HasZeroSuppression);
+				return 0.0;
 			}
 		}
 				
-		std::pair<double,bool> GetSegmentAverageEnergy() const { 
+		double GetSegmentAverageEnergy() const { 
 			if( IsValidSegment() ){
-				return std::make_pair((segFront_->GetCalibratedEnergy() + segBack_->GetCalibratedEnergy())/2.0,true); 
+				return (segFront_->GetCalibratedEnergy() + segBack_->GetCalibratedEnergy())/2.0; 
 			}else{
-				return std::make_pair(0.0,not HasZeroSuppression);
+				return 0.0;
 			}
 		}
-		std::pair<double,bool> GetSegmentTdiffInNS() const { 
+		double GetSegmentTdiffInNS() const { 
 			double clockInSeconds;
 			if (PixieRev == "F"){
 				clockInSeconds = Globals::get()->GetClockInSeconds(segFront_->GetChanID().GetModFreq());
@@ -53,19 +52,19 @@ class BSMSegment {
 				clockInSeconds = Globals::get()->GetClockInSeconds();
 			}
 			if( IsValidSegment() ){
-				return std::make_pair((segFront_->GetTimeSansCfd() - segBack_->GetTimeSansCfd()) * clockInSeconds * 1.0e9,true);
+				return (segFront_->GetTimeSansCfd() - segBack_->GetTimeSansCfd()) * clockInSeconds * 1.0e9;
 			}else{
-				return std::make_pair(0.0,not HasZeroSuppression);
+				return 0.0;
 			}
 		}
-		std::pair<double,bool> GetFrontEnergy() const{
+		double GetFrontEnergy() const{
 			if( segFront_ == nullptr ){
-				return std::make_pair(0.0,not HasZeroSuppression);
+				return 0.0;
 			}else{
-				return std::make_pair(segFront_->GetCalibratedEnergy(),true);
+				return segFront_->GetCalibratedEnergy();
 			}
 		}
-		std::pair<double,bool> GetFrontTimeInNS() const{
+		double GetFrontTimeInNS() const{
 			double clockInSeconds;
 			if (PixieRev == "F"){
 				clockInSeconds = Globals::get()->GetClockInSeconds(segFront_->GetChanID().GetModFreq());
@@ -73,12 +72,12 @@ class BSMSegment {
 				clockInSeconds = Globals::get()->GetClockInSeconds();
 			}
 			if( segFront_ == nullptr ){
-				return std::make_pair(0.0,not HasZeroSuppression);
+				return 0.0;
 			}else{
-				return std::make_pair(segFront_->GetTimeSansCfd() * clockInSeconds * 1.0e9,true);
+				return segFront_->GetTimeSansCfd() * clockInSeconds * 1.0e9;
 			}
 		}
-		std::pair<double,bool> GetBackTimeInNS() const{
+		double GetBackTimeInNS() const{
 			double clockInSeconds;
 			if (PixieRev == "F"){
 				clockInSeconds = Globals::get()->GetClockInSeconds(segFront_->GetChanID().GetModFreq());
@@ -86,17 +85,17 @@ class BSMSegment {
 				clockInSeconds = Globals::get()->GetClockInSeconds();
 			}
 			if( segBack_ == nullptr ){
-				return std::make_pair(0.0,not HasZeroSuppression);
+				return 0.0;
 			}else{
-				return std::make_pair(segBack_->GetTimeSansCfd() * clockInSeconds * 1.0e9,true);
+				return segBack_->GetTimeSansCfd() * clockInSeconds * 1.0e9;
 			}
 		}
 
-		std::pair<double,bool> GetBackEnergy() const{
+		double GetBackEnergy() const{
 			if( segBack_ == nullptr ){
-				return std::make_pair(0.0,not HasZeroSuppression);
+				return 0.0;
 			}else{
-				return std::make_pair(segBack_->GetCalibratedEnergy(),true);
+				return segBack_->GetCalibratedEnergy();
 			}
 		}
 
@@ -108,11 +107,21 @@ class BSMSegment {
 		bool HasZeroSuppression;
 };
 
+struct BSMPositionCorrection{
+	double constant = 0.0;
+	double slope = 0.0;
+	double mean = 1.0;
+	
+	double Correct(double erg,double pos){
+		double val = mean/std::exp(constant + slope*pos);
+		return erg/val;
+	}
+};
 
 class BSMProcessor : public EventProcessor {
 	public:
 		/**Constructor */
-		BSMProcessor(int,bool,bool,std::vector<std::pair<double,double>>,double,double,double,double,double);
+		BSMProcessor(int,bool,std::vector<std::pair<double,double>>,double,double,double,double,double,double,double);
 
 		/** Deconstructor */
 		~BSMProcessor() = default;
@@ -136,7 +145,6 @@ class BSMProcessor : public EventProcessor {
 	private:
 		std::string PixieRev; //! pixie revision
 		int NumSegments;
-		bool HasZeroSuppression;
 		bool StandAlone;
 		double Threshold;
 		double MeanEnergy;
@@ -144,10 +152,12 @@ class BSMProcessor : public EventProcessor {
 		double a_1;
 		double a_2;
 
-		std::pair<double,bool> BSMTotal;
-		std::pair<double,bool> FrontAvg;
-		std::pair<double,bool> BackAvg;
+		double BSMTotal;
+		double FrontAvg;
+		double BackAvg;
 		std::vector<BSMSegment> BSMSegVec;
+		BSMPositionCorrection FrontCorrection;
+		BSMPositionCorrection BackCorrection;
 		double BSMPosition;
 
 		std::vector<std::pair<double,double>> MTASGates;
