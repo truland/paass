@@ -180,31 +180,32 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 		if( segIter.IsValidSegment() )
 			++NumFire;
 	}
-	
-	for( auto& segIter : BSMSegVec ){
-		auto result = segIter.GetSegmentAverageEnergy();
-		auto frontresult = segIter.GetFrontEnergy();
-		auto backresult = segIter.GetBackEnergy();
-		//BSMTotal.first += result.first/static_cast<double>(NumFire);
-		//BSMTotal.second = true;	
-		FrontAvg += frontresult/static_cast<double>(NumFire);
-		BackAvg += backresult/static_cast<double>(NumFire);
+	if( NumFire > 0 ){
+		for( auto& segIter : BSMSegVec ){
+			auto result = segIter.GetSegmentAverageEnergy();
+			auto frontresult = segIter.GetFrontEnergy();
+			auto backresult = segIter.GetBackEnergy();
+			//BSMTotal.first += result.first/static_cast<double>(NumFire);
+			//BSMTotal.second = true;	
+			FrontAvg += frontresult/static_cast<double>(NumFire);
+			BackAvg += backresult/static_cast<double>(NumFire);
+		}
+		BSMPosition = (SD/2)*(1.0+((FrontAvg-BackAvg)/(FrontAvg+BackAvg)));
+		FrontAvg = FrontCorrection.Correct(FrontAvg,BSMPosition);
+		BackAvg = BackCorrection.Correct(BackAvg,BSMPosition);
+		BSMTotal = (FrontAvg + BackAvg)/static_cast<double>(2*NumFire);
+
+		//Do we only do position correction on Total??????
+		//How do we handle the front and back avg
+		//or do we handle the front and back position correction separately
+
+		plot(D_BSM_TOTAL,BSMTotal);
+		plot(DD_BSM_F_B,FrontAvg,BackAvg);
+		plot(DD_BSM_TOTAL_AVG,BSMTotal,sqrt(FrontAvg*BackAvg));
+		//BSMPosition = (SD/2)*(1.0+((FrontAvg-BackAvg)/(FrontAvg+BackAvg)));
+		plot(D_BSM_POSITION,(SD/2)*(1.0+((FrontAvg-BackAvg)/(FrontAvg+BackAvg))));
+		plot(DD_BSM_TOTAL_POS,(SD/2)*(1.0+((FrontAvg-BackAvg)/(FrontAvg+BackAvg))),BSMTotal);
 	}
-	BSMPosition = (SD/2)*(1.0+((FrontAvg-BackAvg)/(FrontAvg+BackAvg)));
-	FrontAvg = FrontCorrection.Correct(FrontAvg,BSMPosition);
-	BackAvg = BackCorrection.Correct(BackAvg,BSMPosition);
-	BSMTotal = (FrontAvg + BackAvg)/static_cast<double>(2*NumFire);
-
-	//Do we only do position correction on Total??????
-	//How do we handle the front and back avg
-	//or do we handle the front and back position correction separately
-
-	plot(D_BSM_TOTAL,BSMTotal);
-	plot(DD_BSM_F_B,FrontAvg,BackAvg);
-	plot(DD_BSM_TOTAL_AVG,BSMTotal,sqrt(FrontAvg*BackAvg));
-	BSMPosition = (SD/2)*(1.0+((FrontAvg-BackAvg)/(FrontAvg+BackAvg)));
-	plot(D_BSM_POSITION,(SD/2)*(1.0+((FrontAvg-BackAvg)/(FrontAvg+BackAvg))));
-	plot(DD_BSM_TOTAL_POS,(SD/2)*(1.0+((FrontAvg-BackAvg)/(FrontAvg+BackAvg))),BSMTotal);
 
 	EventData TotalData(EarliestTime,BSMTotal);
 	TreeCorrelator::get()->place("BSM_Total")->activate(TotalData);

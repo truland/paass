@@ -114,7 +114,8 @@ struct BSMPositionCorrection{
 	
 	double Correct(double erg,double pos){
 		double val = mean/std::exp(constant + slope*pos);
-		return erg/val;
+		//std::cout << erg << '\t' << pos << '\t' << erg/val << std::endl;
+		return erg*val;
 	}
 };
 
