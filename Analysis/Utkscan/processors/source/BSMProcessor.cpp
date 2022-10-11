@@ -189,15 +189,27 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 			//BSMTotal.second = true;	
 			FrontAvg += frontresult/static_cast<double>(NumFire);
 			BackAvg += backresult/static_cast<double>(NumFire);
+
+			//! Begin Root Output stuff.
+			if (DetectorDriver::get()->GetSysRootOutput() && segIter.IsValidSegment()) {
+				Bsmstruct.energy = segIter.GetSegmentAverageEnergy();
+				Bsmstruct.fEnergy = segIter.GetFrontEnergy();
+				Bsmstruct.bEnergy = segIter.GetBackEnergy();
+				Bsmstruct.time = (segIter.GetFrontTimeInNS() + segIter.GetBackTimeInNS())/2.0;
+				Bsmstruct.tdiff = (segIter.GetFrontTimeInNS() - segIter.GetBackTimeInNS());
+				Bsmstruct.gSegmentID = segIter.gBSMSegID_;
+				Bsmstruct.segmentNum = (segIter.gBSMSegID_+1)/2;
+				
+				pixie_tree_event_->bsm_vec_.emplace_back(Bsmstruct);
+				Bsmstruct = processor_struct::BSM_DEFAULT_STRUCT;
+			}
+
+
 		}
 		BSMPosition = (SD/2)*(1.0+((FrontAvg-BackAvg)/(FrontAvg+BackAvg)));
 		FrontAvg = FrontCorrection.Correct(FrontAvg,BSMPosition);
 		BackAvg = BackCorrection.Correct(BackAvg,BSMPosition);
 		BSMTotal = (FrontAvg + BackAvg)/static_cast<double>(2*NumFire);
-
-		//Do we only do position correction on Total??????
-		//How do we handle the front and back avg
-		//or do we handle the front and back position correction separately
 
 		plot(D_BSM_TOTAL,BSMTotal);
 		plot(DD_BSM_F_B,FrontAvg,BackAvg);

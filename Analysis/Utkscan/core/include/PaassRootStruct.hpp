@@ -9,6 +9,18 @@
 
 namespace processor_struct {
 
+struct BSM {
+    double energy = -999;
+    double fEnergy = -999;
+    double bEnergy = -999;
+    double time = -999;
+    double tdiff = -999;
+    int gSegmentID = -999;   //Global Segment ID (0-47)
+    int segmentNum = -999;  //Segment id per ring (1-6)
+};
+static const BSM BSM_DEFAULT_STRUCT;
+
+
 struct CLOVERS {
     double energy = -999;
     double rawEnergy = -999;
@@ -62,6 +74,19 @@ struct LOGIC {
     int cycleNum = -999;
 };
 static const LOGIC LOGIC_DEFAULT_STRUCT;
+
+struct MTAS {
+    double energy = -999;
+    double fEnergy = -999;
+    double bEnergy = -999;
+    double time = -999;
+    double tdiff = -999;
+    int gSegmentID = -999;   //Global Segment ID (0-47)
+    int segmentNum = -999;  //Segment id per ring (1-6)
+    int RingNum = -999;     //Ring ID as a number (0 -> Center, 1 -> Inner etc)
+    TString Ring = "";
+};
+static const MTAS MTAS_DEFAULT_STRUCT;
 
 struct PSPMT {
     double energy = -999;
@@ -145,10 +170,12 @@ class PixTreeEvent : public TObject {
         externalTS2 = obj.externalTS2;
         eventNum = obj.eventNum;
         fileName = obj.fileName;
+	bsm_vec_ = obj.bsm_vec_;
         clover_vec_ = obj.clover_vec_;
         doublebeta_vec_ = obj.doublebeta_vec_;
         gamma_scint_vec_ = obj.gamma_scint_vec_;
         logic_vec_ = obj.logic_vec_;
+	mtas_vec_ = obj.mtas_vec_;
         pspmt_vec_ = obj.pspmt_vec_;
         root_dev_vec_ = obj.root_dev_vec_;
         singlebeta_vec_ = obj.singlebeta_vec_;
@@ -163,10 +190,12 @@ class PixTreeEvent : public TObject {
         externalTS2 = 0;
         eventNum = 0;
         fileName = "";
+	bsm_vec_.clear();
         clover_vec_.clear();
         doublebeta_vec_.clear();
         gamma_scint_vec_.clear();
         logic_vec_.clear();
+	mtas_vec_.clear();
         pspmt_vec_.clear();
         root_dev_vec_.clear();
         singlebeta_vec_.clear();
@@ -178,10 +207,12 @@ class PixTreeEvent : public TObject {
     ULong64_t externalTS2 = 0;
     Double_t eventNum = 0;
     std::string fileName = "";
+    std::vector<processor_struct::BSM> bsm_vec_;
     std::vector<processor_struct::CLOVERS> clover_vec_;
     std::vector<processor_struct::DOUBLEBETA> doublebeta_vec_;
     std::vector<processor_struct::GAMMASCINT> gamma_scint_vec_;
     std::vector<processor_struct::LOGIC> logic_vec_;
+    std::vector<processor_struct::MTAS> mtas_vec_;
     std::vector<processor_struct::PSPMT> pspmt_vec_;
     std::vector<processor_struct::ROOTDEV> root_dev_vec_;
     std::vector<processor_struct::SINGLEBETA> singlebeta_vec_;

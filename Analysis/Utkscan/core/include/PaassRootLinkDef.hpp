@@ -7,6 +7,9 @@
 #define PAASS_LINKDEF_HPP
 #ifdef __CINT__
 
+#pragma link C++ struct processor_struct::BSM+;
+#pragma link C++ class std::vector<processor_struct::BSM>+;
+
 #pragma link C++ struct processor_struct::CLOVERS+;
 #pragma link C++ class std::vector<processor_struct::CLOVERS>+;
 
@@ -18,6 +21,9 @@
 
 #pragma link C++ struct processor_struct::LOGIC+;
 #pragma link C++ class std::vector<processor_struct::LOGIC>+;
+
+#pragma link C++ struct processor_struct::MTAS+;
+#pragma link C++ class std::vector<processor_struct::MTAS>+;
 
 #pragma link C++ struct processor_struct::PSPMT+;
 #pragma link C++ class std::vector<processor_struct::PSPMT>+;

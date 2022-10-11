@@ -23,7 +23,6 @@ class MtasSegment {
 			segBack_ = nullptr;
 			gMtasSegID_ = -1;
 			HasZeroSuppression = zerosuppress;
-
 		};
 		/** Destructor */
 		~MtasSegment() = default;
@@ -70,9 +69,38 @@ class MtasSegment {
 				return std::make_pair(segBack_->GetCalibratedEnergy(),true);
 			}
 		}
+	
+		std::pair<double,bool> GetFrontTimeInNS() const{
+			double clockInSeconds;
+			if (PixieRev == "F"){
+				clockInSeconds = Globals::get()->GetClockInSeconds(segFront_->GetChanID().GetModFreq());
+			} else {
+				clockInSeconds = Globals::get()->GetClockInSeconds();
+			}
+			if( segFront_ == nullptr ){
+				return std::make_pair(0.0,not HasZeroSuppression);
+			}else{
+				return std::make_pair(segFront_->GetTimeSansCfd() * clockInSeconds * 1.0e9,true);
+			}
+		}
+		std::pair<double,bool> GetBackTimeInNS() const{
+			double clockInSeconds;
+			if (PixieRev == "F"){
+				clockInSeconds = Globals::get()->GetClockInSeconds(segFront_->GetChanID().GetModFreq());
+			} else {
+				clockInSeconds = Globals::get()->GetClockInSeconds();
+			}
+			if( segBack_ == nullptr ){
+				return std::make_pair(0.0,not HasZeroSuppression);
+			}else{
+				return std::make_pair(segFront_->GetTimeSansCfd() * clockInSeconds * 1.0e9,true);
+			}
+		}
+
 
 	public:
 		int gMtasSegID_;
+		std::string segRing_;
 		ChanEvent* segFront_;
 		ChanEvent* segBack_ ;
 		std::string PixieRev;
@@ -104,7 +132,7 @@ class MtasProcessor : public EventProcessor {
 		void DeclarePlots(void);
 
 	private:
-		//processor_struct::MTAS Mtasstruct;  //!<Root Struct
+		processor_struct::MTAS Mtasstruct;  //!<Root Struct
 		std::string PixieRev; //! pixie revision
 		bool IsNewCenter;
 		bool HasZeroSuppression;

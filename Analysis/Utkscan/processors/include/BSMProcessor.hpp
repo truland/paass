@@ -144,6 +144,7 @@ class BSMProcessor : public EventProcessor {
 		void DeclarePlots(void);
 
 	private:
+		processor_struct::BSM Bsmstruct;  //!<Root Struct
 		std::string PixieRev; //! pixie revision
 		int NumSegments;
 		bool StandAlone;

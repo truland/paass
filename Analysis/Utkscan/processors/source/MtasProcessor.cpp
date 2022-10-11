@@ -238,6 +238,7 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 			MtasSegMulti.at(GlobalMtasChanID)++; // increment the multipliciy "map" based on GlobalMtasSegID
 
 			MtasSegVec.at(GlobalMtasSegID).gMtasSegID_ = GlobalMtasSegID;
+			MtasSegVec.at(GlobalMtasSegID).segRing_ = Ring;
 			if(isFront && MtasSegVec.at(GlobalMtasSegID).segFront_ == nullptr){  
 				if( (*chanEvtIter)->GetTimeSansCfd() < EarliestTime )
 					EarliestTime = (*chanEvtIter)->GetTimeSansCfd(); 
@@ -319,6 +320,30 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 			frontenergy = FrontEnergyResult.first;
 			backenergy = BackEnergyResult.first;
 		}
+		//! Begin Root Output stuff.
+		if (DetectorDriver::get()->GetSysRootOutput() && segIter->IsValidSegment()) {
+			Mtasstruct.energy = segIter->GetSegmentAverageEnergy().first;
+			Mtasstruct.fEnergy = segIter->GetFrontEnergy().first;
+			Mtasstruct.bEnergy = segIter->GetBackEnergy().first;
+			Mtasstruct.time = (segIter->GetFrontTimeInNS().first + segIter->GetBackTimeInNS().first)/2.0;
+			Mtasstruct.tdiff = (segIter->GetFrontTimeInNS().first - segIter->GetBackTimeInNS().first);
+			Mtasstruct.gSegmentID = segIter->gMtasSegID_;
+			Mtasstruct.segmentNum = (segIter->gMtasSegID_+1)/2;
+			Mtasstruct.Ring = segIter->segRing_;
+			if (strcmp(segIter->segRing_.c_str(), "center") == 0 ) {
+				Mtasstruct.RingNum = 1;
+			} else if (strcmp(segIter->segRing_.c_str(), "inner") == 0 ) {
+				Mtasstruct.RingNum = 2;
+			} else if (strcmp(segIter->segRing_.c_str(), "middle") == 0 ) {
+				Mtasstruct.RingNum = 3;
+			} else if (strcmp(segIter->segRing_.c_str(), "outer") == 0 ) {
+				Mtasstruct.RingNum = 4;
+			}
+			
+			pixie_tree_event_->mtas_vec_.emplace_back(Mtasstruct);
+			Mtasstruct = processor_struct::MTAS_DEFAULT_STRUCT;
+		}
+	
 		if (segmentID >= 0 && segmentID <= 5 ){
 			//D_MTAS_SUM_FB + 50 + OUTER_OFFSET + (2* i ),
 
