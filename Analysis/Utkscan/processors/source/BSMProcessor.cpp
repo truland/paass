@@ -28,8 +28,8 @@ namespace dammIds {
 		//6500 is beginning, 500 range
 		const unsigned TOTAL_OFFSET = 0;
 		const unsigned POS_OFFSET = 100;
-		
 		const unsigned DD_OFFSET = 250;
+		const unsigned DD_COMPRESSED_OFFSET = 400;
 
 		const unsigned D_BSM_TOTAL = TOTAL_OFFSET; 
 		const unsigned D_BSM_MTAS_SUM = TOTAL_OFFSET + 1;
@@ -48,6 +48,8 @@ namespace dammIds {
 		const unsigned DD_BSM_F_B_MTAS_GATES = DD_OFFSET + 30;
 		const unsigned DD_BSM_F_POS_MTAS_GATES = DD_OFFSET + 40;
 		const unsigned DD_BSM_B_POS_MTAS_GATES = DD_OFFSET + 50;
+
+		const unsigned DD_BSM_MTAS_TOTAL_COMPRESSED = DD_COMPRESSED_OFFSET;
 	}
 }
 using namespace std;
@@ -82,6 +84,7 @@ void BSMProcessor::DeclarePlots(void){
 		DeclareHistogram2D(DD_BSM_B_POS_MTAS_GATES+ii,SD,SC,hisname.c_str());
 	}
 
+	DeclareHistogram2D(DD_BSM_MTAS_TOTAL_COMPRESSED,SC,SC,"BSM Total/10 vs MTAS Total/10");
 }
 
 
@@ -238,6 +241,7 @@ bool BSMProcessor::Process(RawEvent &event) {
 			if( mtas_total->info_.size() > 0 ){
 				double MTASTotal = mtas_total->last().energy;
 				plot(DD_BSM_MTAS_TOTAL,MTASTotal,BSMTotal);
+				plot(DD_BSM_MTAS_TOTAL_COMPRESSED,MTASTotal/10.0,BSMTotal/10.0);
 				plot(D_BSM_MTAS_SUM,MTASTotal + BSMTotal);
 				for( unsigned int ii = 0; ii < NumGates; ++ii ){
 					plot(DD_BSM_MTAS_GATES,ii,MTASGates.at(ii).first);
