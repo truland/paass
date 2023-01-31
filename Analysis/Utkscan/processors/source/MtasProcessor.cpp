@@ -164,13 +164,14 @@ void MtasProcessor::DeclarePlots(void){
 }
 
 
-MtasProcessor::MtasProcessor(bool newcenter,bool zerosuppress,double thresh) : EventProcessor(OFFSET, RANGE, "MtasProcessor") {
+MtasProcessor::MtasProcessor(bool newcenter,bool zerosuppress,double thresh,int pmtthresh) : EventProcessor(OFFSET, RANGE, "MtasProcessor") {
 	associatedTypes.insert("mtas");
 	PixieRev = Globals::get()->GetPixieRevision();
 	IsNewCenter = newcenter;
 	HasZeroSuppression = zerosuppress;
 	BetaThreshold = thresh;
 	IsPrevBetaTriggered = false;
+	NumPMTFire = pmtthresh; 
 }
 
 bool MtasProcessor::PreProcess(RawEvent &event) {
@@ -262,9 +263,14 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 	outerSum = make_pair(0,not HasZeroSuppression);
 	totalSum = make_pair(0,not HasZeroSuppression);
 	int NumCenter = 0;
+	int CurrNumCenter = 0;
 	for( auto ii = 0; ii < 6; ++ii ){
-		if( MtasSegVec.at(ii).IsValidSegment() )
+		if( MtasSegVec.at(ii).IsValidSegment() ){
 			NumCenter++;
+			CurrNumCenter += 2;
+		}else if( MtasSegVec.at(ii).IsValidFront() || MtasSegVec.at(ii).IsValidBack() ){
+			CurrNumCenter++;
+		}
 	}
 	double segmentAvg = 0.0;
 	double segTdiff = 0.0;
@@ -286,8 +292,10 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 				totalSum.first += segmentAvg;
 				centerSum.first += segmentAvg;
 			}else{
-				totalSum.first += segmentAvg/static_cast<double>(NumCenter);
-				centerSum.first += segmentAvg/static_cast<double>(NumCenter);
+				if( CurrNumCenter >= NumPMTFire ){
+					totalSum.first += segmentAvg/static_cast<double>(NumCenter);
+					centerSum.first += segmentAvg/static_cast<double>(NumCenter);
+				}
 			}
 		} else if (segmentID >= 6 && segmentID <= 11 ){
 			innerSum.second = true;

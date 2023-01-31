@@ -269,7 +269,8 @@ vector<EventProcessor *> DetectorDriverXmlParser::ParseProcessors(const pugi::xm
             vecProcess.push_back(new MtasProcessor(
 		processor.attribute("new_center").as_bool(false),
 		processor.attribute("zero_suppress").as_bool(false),
-		processor.attribute("beta_threshold").as_double(1.0)
+		processor.attribute("beta_threshold").as_double(1.0),
+		processor.attribute("num_center").as_int(12)
 	    ));
         } else if (name == "TeenyVandleProcessor") {
             vecProcess.push_back(new TeenyVandleProcessor());

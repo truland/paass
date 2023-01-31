@@ -27,6 +27,8 @@ class MtasSegment {
 		/** Destructor */
 		~MtasSegment() = default;
 		bool IsValidSegment() const { return segBack_ != nullptr and segFront_ != nullptr; }
+		bool IsValidFront() const { return segFront_ != nullptr; }
+		bool IsValidBack() const { return segBack_ != nullptr; }
 		std::pair<double,bool> GetSegmentPosition() const{
 			if( IsValidSegment() ){
 				return std::make_pair((segFront_->GetCalibratedEnergy() - segBack_->GetCalibratedEnergy())/(segFront_->GetCalibratedEnergy() + segBack_->GetCalibratedEnergy()),true);
@@ -110,7 +112,7 @@ class MtasSegment {
 class MtasProcessor : public EventProcessor {
 	public:
 		/**Constructor */
-		MtasProcessor(bool,bool,double);
+		MtasProcessor(bool,bool,double,int);
 
 		/** Deconstructor */
 		~MtasProcessor() = default;
@@ -138,6 +140,7 @@ class MtasProcessor : public EventProcessor {
 		bool HasZeroSuppression;
 		bool IsPrevBetaTriggered;
 		double BetaThreshold;
+		int NumPMTFire;
 
 		double SignalTime;
 		double PrevBetaEnergy;
