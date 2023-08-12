@@ -48,6 +48,14 @@ namespace dammIds {
 		const unsigned DD_BSM_F_B_MTAS_GATES = DD_OFFSET + 30;
 		const unsigned DD_BSM_F_POS_MTAS_GATES = DD_OFFSET + 40;
 		const unsigned DD_BSM_B_POS_MTAS_GATES = DD_OFFSET + 50;
+		const unsigned DD_BSM_MTAS_CENTER_SUM = DD_OFFSET + 60;
+		const unsigned DD_BSM_MTAS_CENTER_INDIVIDUAL = DD_OFFSET + 61;
+		const unsigned DD_BSM_MTAS_INNER_SUM = DD_OFFSET + 70;
+		const unsigned DD_BSM_MTAS_INNER_INDIVIDUAL = DD_OFFSET + 71;
+		const unsigned DD_BSM_MTAS_MIDDLE_SUM = DD_OFFSET + 80;
+		const unsigned DD_BSM_MTAS_MIDDLE_INDIVIDUAL = DD_OFFSET + 81;
+		const unsigned DD_BSM_MTAS_OUTTER_SUM = DD_OFFSET + 90;
+		const unsigned DD_BSM_MTAS_OUTTER_INDIVIDUAL= DD_OFFSET + 91;
 
 		const unsigned DD_BSM_MTAS_TOTAL_COMPRESSED = DD_COMPRESSED_OFFSET;
 	}
@@ -62,27 +70,35 @@ void BSMProcessor::DeclarePlots(void){
 	for( unsigned int ii = 0; ii < NumGates; ++ii ){
 		string hisname = "BSM MTAS T["+to_string((int)MTASGates.at(ii).first)+","+to_string((int)MTASGates.at(ii).second)+"]";
 		DeclareHistogram1D(D_BSM_MTAS_GATES+ii,SE,hisname.c_str());
-		DeclareHistogram2D(D_BSM_MTAS_GATES+(NumGates + ii),SD,S4,("Cal "+hisname).c_str());
+		//DeclareHistogram2D(D_BSM_MTAS_GATES+(NumGates + ii),SD,S4,("Cal "+hisname).c_str());
 	}
 
 	DeclareHistogram1D(D_BSM_POSITION,SD,"BSM Position");
 
 	DeclareHistogram2D(DD_BSM_MTAS_GATES,S4,SC,"MTAS Gates");
 	DeclareHistogram2D(DD_BSM_MTAS_TOTAL,SC,SC,"BSM Total vs MTAS Total");
+	DeclareHistogram2D(DD_BSM_MTAS_CENTER_SUM,SC,SC,"BSM Total vs MTAS Center Sum");
+	DeclareHistogram2D(DD_BSM_MTAS_CENTER_INDIVIDUAL,SC,SC,"BSM Total vs MTAS Center Individual");
+	DeclareHistogram2D(DD_BSM_MTAS_INNER_SUM,SC,SC,"BSM Total vs MTAS Inner Sum");
+	DeclareHistogram2D(DD_BSM_MTAS_INNER_INDIVIDUAL,SC,SC,"BSM Total vs MTAS Inner Individual");
+	DeclareHistogram2D(DD_BSM_MTAS_MIDDLE_SUM,SC,SC,"BSM Total vs MTAS Middle Sum");
+	DeclareHistogram2D(DD_BSM_MTAS_MIDDLE_INDIVIDUAL,SC,SC,"BSM Total vs MTAS Middle Individual");
+	DeclareHistogram2D(DD_BSM_MTAS_OUTTER_SUM,SC,SC,"BSM Total vs MTAS Outter Sum");
+	DeclareHistogram2D(DD_BSM_MTAS_OUTTER_INDIVIDUAL,SC,SC,"BSM Total vs MTAS Outter Individual");
 	DeclareHistogram2D(DD_BSM_F_B,SC,SC,"BSM Front Avg vs BSM Back Avg");
 	DeclareHistogram2D(DD_BSM_TOTAL_AVG,SD,SD,"BSM Avg vs BSM Sqrt"); 
 	DeclareHistogram2D(DD_BSM_TOTAL_POS,SD,SC,"BSM Energy vs Position");
 	DeclareHistogram2D(DD_BSM_TOTAL_POS_ZERO_MTAS,SD,SC,"BSM Energy vs Position No MTAS");
-	for( unsigned int ii = 0; ii < NumGates; ++ii ){
-		string hisname = "BSM Energy vs Position MTAS T["+to_string((int)MTASGates.at(ii).first)+","+to_string((int)MTASGates.at(ii).second)+"]";
-		DeclareHistogram2D(DD_BSM_TOTAL_POS_MTAS_GATES+ii,SD,SC,hisname.c_str());
-		hisname = "BSM Front vs Back MTAS T["+to_string((int)MTASGates.at(ii).first)+","+to_string((int)MTASGates.at(ii).second)+"]";
-		DeclareHistogram2D(DD_BSM_F_B_MTAS_GATES+ii,SC,SC,hisname.c_str());
-		hisname = "BSM Front Energy vs Position MTAS T["+to_string((int)MTASGates.at(ii).first)+","+to_string((int)MTASGates.at(ii).second)+"]";
-		DeclareHistogram2D(DD_BSM_F_POS_MTAS_GATES+ii,SD,SC,hisname.c_str());
-		hisname = "BSM Back Energy vs Position MTAS T["+to_string((int)MTASGates.at(ii).first)+","+to_string((int)MTASGates.at(ii).second)+"]";
-		DeclareHistogram2D(DD_BSM_B_POS_MTAS_GATES+ii,SD,SC,hisname.c_str());
-	}
+	//for( unsigned int ii = 0; ii < NumGates; ++ii ){
+	//	string hisname = "BSM Energy vs Position MTAS T["+to_string((int)MTASGates.at(ii).first)+","+to_string((int)MTASGates.at(ii).second)+"]";
+	//	DeclareHistogram2D(DD_BSM_TOTAL_POS_MTAS_GATES+ii,SD,SC,hisname.c_str());
+	//	hisname = "BSM Front vs Back MTAS T["+to_string((int)MTASGates.at(ii).first)+","+to_string((int)MTASGates.at(ii).second)+"]";
+	//	DeclareHistogram2D(DD_BSM_F_B_MTAS_GATES+ii,SC,SC,hisname.c_str());
+	//	hisname = "BSM Front Energy vs Position MTAS T["+to_string((int)MTASGates.at(ii).first)+","+to_string((int)MTASGates.at(ii).second)+"]";
+	//	DeclareHistogram2D(DD_BSM_F_POS_MTAS_GATES+ii,SD,SC,hisname.c_str());
+	//	hisname = "BSM Back Energy vs Position MTAS T["+to_string((int)MTASGates.at(ii).first)+","+to_string((int)MTASGates.at(ii).second)+"]";
+	//	DeclareHistogram2D(DD_BSM_B_POS_MTAS_GATES+ii,SD,SC,hisname.c_str());
+	//}
 
 	DeclareHistogram2D(DD_BSM_MTAS_TOTAL_COMPRESSED,SC,SC,"BSM Total/10 vs MTAS Total/10");
 }
@@ -232,9 +248,69 @@ bool BSMProcessor::Process(RawEvent &event) {
 	if (!EventProcessor::Process(event))
 		return false;
 
-	if(TreeCorrelator::get()->checkPlace("MTAS_Total")){
-		if(TreeCorrelator::get()->place("MTAS_Total")->status()){
-			PlaceDetector* mtas_total = dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_Total")); 
+	bool IsValid = true;
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_Total");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_CenterSum");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_InnerSum");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_MiddleSum");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_OutterSum");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_C0");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_C1");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_C2");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_C3");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_C4");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_C5");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_I0");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_I1");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_I2");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_I3");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_I4");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_I5");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_M0");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_M1");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_M2");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_M3");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_M4");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_M5");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_O0");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_O1");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_O2");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_O3");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_O4");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_O5");
+
+	if(IsValid){
+		PlaceDetector* mtas_total = nullptr;
+		if(TreeCorrelator::get()->place("MTAS_Total")->status())
+			mtas_total = dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_Total")); 
+		PlaceDetector* mtas_center = nullptr;
+		if(TreeCorrelator::get()->place("MTAS_CenterSum")->status())
+			mtas_center = dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_CenterSum")); 
+		PlaceDetector* mtas_inner = nullptr;
+		if(TreeCorrelator::get()->place("MTAS_InnerSum")->status())
+			mtas_inner = dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_InnerSum")); 
+		PlaceDetector* mtas_middle = nullptr;
+		if(TreeCorrelator::get()->place("MTAS_MiddleSum")->status())
+			mtas_middle = dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_MiddleSum")); 
+		PlaceDetector* mtas_outter = nullptr;
+		if(TreeCorrelator::get()->place("MTAS_OutterSum")->status())
+			mtas_outter = dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_OutterSum")); 
+		vector<PlaceDetector*> mtas_center_individual(6,nullptr);
+		vector<PlaceDetector*> mtas_inner_individual(6,nullptr);
+		vector<PlaceDetector*> mtas_middle_individual(6,nullptr);
+		vector<PlaceDetector*> mtas_outter_individual(6,nullptr);
+		for( int ii = 0; ii < 6; ++ii ){
+			if(TreeCorrelator::get()->place("MTAS_C"+to_string(ii))->status())
+				mtas_center_individual.at(ii) =  dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_C"+to_string(ii)));
+			if(TreeCorrelator::get()->place("MTAS_I"+to_string(ii))->status())
+				mtas_inner_individual.at(ii) =  dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_I"+to_string(ii)));
+			if(TreeCorrelator::get()->place("MTAS_M"+to_string(ii))->status())
+				mtas_middle_individual.at(ii) =  dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_M"+to_string(ii)));
+			if(TreeCorrelator::get()->place("MTAS_O"+to_string(ii))->status())
+				mtas_outter_individual.at(ii) =  dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_O"+to_string(ii)));
+		}
+
+		if(mtas_total != nullptr){
 			//for( auto& e : mtas_total->info_ )
 			//	cout << e.energy << " " << e.time << '\t';
 			//cout << endl;
@@ -267,7 +343,7 @@ bool BSMProcessor::Process(RawEvent &event) {
 		}
 	}else{
 		if( not StandAlone )
-			throw "ERROR BSMProcessor::Process BSM isn't in standalone mode and the treecorrelator for MTAS_Total isn't setup";
+			throw "ERROR BSMProcessor::Process BSM isn't in standalone mode and the treecorrelator for MTAS_Total and others isn't setup";
 	}
 
 	EndProcess();

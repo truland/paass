@@ -457,6 +457,26 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 	//place MTAS_Total so other classes have access to it
 	EventData TotalData(EarliestTime,totalSum.first);
 	TreeCorrelator::get()->place("MTAS_Total")->activate(TotalData);
+	EventData CenterSum(EarliestTime,centerSum.first);
+	TreeCorrelator::get()->place("MTAS_CenterSum")->activate(CenterSum);
+	EventData InnerSum(EarliestTime,innerSum.first);
+	TreeCorrelator::get()->place("MTAS_InnerSum")->activate(InnerSum);
+	EventData MiddleSum(EarliestTime,middleSum.first);
+	TreeCorrelator::get()->place("MTAS_MiddleSum")->activate(MiddleSum);
+	EventData OutterSum(EarliestTime,outerSum.first);
+	TreeCorrelator::get()->place("MTAS_OutterSum")->activate(OutterSum);
+	for( int ii = 0; ii < 6; ++ii ){
+		EventData CurrCenter(EarliestTime,MtasSegVec.at(ii).GetSegmentAverageEnergy().first);
+		EventData CurrInner(EarliestTime,MtasSegVec.at(ii+6).GetSegmentAverageEnergy().first);
+		EventData CurrMiddle(EarliestTime,MtasSegVec.at(ii+12).GetSegmentAverageEnergy().first);
+		EventData CurrOutter(EarliestTime,MtasSegVec.at(ii+18).GetSegmentAverageEnergy().first);
+	
+		TreeCorrelator::get()->place("MTAS_C"+to_string(ii))->activate(CurrCenter);
+		TreeCorrelator::get()->place("MTAS_I"+to_string(ii))->activate(CurrInner);
+		TreeCorrelator::get()->place("MTAS_M"+to_string(ii))->activate(CurrMiddle);
+		TreeCorrelator::get()->place("MTAS_O"+to_string(ii))->activate(CurrOutter);
+	}
+
 	SignalTime = EarliestTime;
 
 	return true;
