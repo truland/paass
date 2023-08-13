@@ -50,8 +50,13 @@ namespace dammIds {
 		const unsigned DD_BSM_B_POS_MTAS_GATES = DD_OFFSET + 50;
 		const unsigned DD_BSM_MTAS_CENTER_SUM = DD_OFFSET + 60;
 		const unsigned DD_BSM_MTAS_CENTER_INDIVIDUAL = DD_OFFSET + 61;
+		const unsigned DD_BSM_MTAS_CENTER_SUM_VETO_MIDDLE_OUTTER = DD_OFFSET + 62;
+		const unsigned DD_BSM_MTAS_CENTER_INDIVIDUAL_VETO_MIDDLE_OUTTER = DD_OFFSET + 63;
+		const unsigned DD_BSM_MTAS_CENTER_SUM_INNER_SUM_VETO_MIDDLE_OUTTER = DD_OFFSET + 64;
 		const unsigned DD_BSM_MTAS_INNER_SUM = DD_OFFSET + 70;
 		const unsigned DD_BSM_MTAS_INNER_INDIVIDUAL = DD_OFFSET + 71;
+		const unsigned DD_BSM_MTAS_INNER_SUM_VETO_MIDDLE_OUTTER = DD_OFFSET + 72;
+		const unsigned DD_BSM_MTAS_INNER_INDIVIDUAL_VETO_MIDDLE_OUTTER = DD_OFFSET + 73;
 		const unsigned DD_BSM_MTAS_MIDDLE_SUM = DD_OFFSET + 80;
 		const unsigned DD_BSM_MTAS_MIDDLE_INDIVIDUAL = DD_OFFSET + 81;
 		const unsigned DD_BSM_MTAS_OUTTER_SUM = DD_OFFSET + 90;
@@ -79,6 +84,11 @@ void BSMProcessor::DeclarePlots(void){
 	DeclareHistogram2D(DD_BSM_MTAS_TOTAL,SC,SC,"BSM Total vs MTAS Total");
 	DeclareHistogram2D(DD_BSM_MTAS_CENTER_SUM,SC,SC,"BSM Total vs MTAS Center Sum");
 	DeclareHistogram2D(DD_BSM_MTAS_CENTER_INDIVIDUAL,SC,SC,"BSM Total vs MTAS Center Individual");
+	DeclareHistogram2D(DD_BSM_MTAS_CENTER_SUM_VETO_MIDDLE_OUTTER,SC,SC,"BSM Total vs MTAS Center Sum veto M+O");
+	DeclareHistogram2D(DD_BSM_MTAS_CENTER_INDIVIDUAL_VETO_MIDDLE_OUTTER,SC,SC,"BSM Total vs MTAS Center Individual veto M+O");
+	DeclareHistogram2D(DD_BSM_MTAS_CENTER_SUM_INNER_SUM_VETO_MIDDLE_OUTTER,SC,SC,"BSM Total vs MTAS Center+Inner Sum veto M+O");
+	DeclareHistogram2D(DD_BSM_MTAS_INNER_SUM_VETO_MIDDLE_OUTTER,SC,SC,"BSM Total vs MTAS Center Sum veto M+O");
+	DeclareHistogram2D(DD_BSM_MTAS_INNER_INDIVIDUAL_VETO_MIDDLE_OUTTER,SC,SC,"BSM Total vs MTAS Center Individual veto M+O");
 	DeclareHistogram2D(DD_BSM_MTAS_INNER_SUM,SC,SC,"BSM Total vs MTAS Inner Sum");
 	DeclareHistogram2D(DD_BSM_MTAS_INNER_INDIVIDUAL,SC,SC,"BSM Total vs MTAS Inner Individual");
 	DeclareHistogram2D(DD_BSM_MTAS_MIDDLE_SUM,SC,SC,"BSM Total vs MTAS Middle Sum");
@@ -280,21 +290,46 @@ bool BSMProcessor::Process(RawEvent &event) {
 	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_O5");
 
 	if(IsValid){
+		double MTASTotal = 0.0;
+		double MTASCenter = 0.0;
+		double MTASInner = 0.0;
+		double MTASMiddle = 0.0;
+		double MTASOutter = 0.0;
+		vector<double> CenterSegment(6,0.0);
+		vector<double> InnerSegment(6,0.0);
+		vector<double> MiddleSegment(6,0.0);
+		vector<double> OutterSegment(6,0.0);
+
 		PlaceDetector* mtas_total = nullptr;
 		if(TreeCorrelator::get()->place("MTAS_Total")->status())
 			mtas_total = dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_Total")); 
+		if( mtas_total->info_.size() > 0 )
+			MTASTotal = mtas_total->last().energy;
+
 		PlaceDetector* mtas_center = nullptr;
 		if(TreeCorrelator::get()->place("MTAS_CenterSum")->status())
 			mtas_center = dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_CenterSum")); 
+		if( mtas_center->info_.size() > 0 )
+			MTASCenter = mtas_center->last().energy;
+
 		PlaceDetector* mtas_inner = nullptr;
 		if(TreeCorrelator::get()->place("MTAS_InnerSum")->status())
 			mtas_inner = dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_InnerSum")); 
+		if( mtas_inner->info_.size() > 0 )
+			MTASInner = mtas_inner->last().energy;
+
 		PlaceDetector* mtas_middle = nullptr;
 		if(TreeCorrelator::get()->place("MTAS_MiddleSum")->status())
 			mtas_middle = dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_MiddleSum")); 
+		if( mtas_middle->info_.size() > 0 )
+			MTASMiddle = mtas_middle->last().energy;
+
 		PlaceDetector* mtas_outter = nullptr;
 		if(TreeCorrelator::get()->place("MTAS_OutterSum")->status())
 			mtas_outter = dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_OutterSum")); 
+		if( mtas_outter->info_.size() > 0 )
+			MTASOutter = mtas_outter->last().energy;
+
 		vector<PlaceDetector*> mtas_center_individual(6,nullptr);
 		vector<PlaceDetector*> mtas_inner_individual(6,nullptr);
 		vector<PlaceDetector*> mtas_middle_individual(6,nullptr);
@@ -302,44 +337,74 @@ bool BSMProcessor::Process(RawEvent &event) {
 		for( int ii = 0; ii < 6; ++ii ){
 			if(TreeCorrelator::get()->place("MTAS_C"+to_string(ii))->status())
 				mtas_center_individual.at(ii) =  dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_C"+to_string(ii)));
+			if( mtas_center_individual.at(ii)->info_.size() > 0 )
+				CenterSegment.at(ii) = mtas_center_individual.at(ii)->last().energy;
+
 			if(TreeCorrelator::get()->place("MTAS_I"+to_string(ii))->status())
 				mtas_inner_individual.at(ii) =  dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_I"+to_string(ii)));
+			if( mtas_inner_individual.at(ii)->info_.size() > 0 )
+				InnerSegment.at(ii) = mtas_inner_individual.at(ii)->last().energy;
+
 			if(TreeCorrelator::get()->place("MTAS_M"+to_string(ii))->status())
 				mtas_middle_individual.at(ii) =  dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_M"+to_string(ii)));
+			if( mtas_middle_individual.at(ii)->info_.size() > 0 )
+				MiddleSegment.at(ii) = mtas_middle_individual.at(ii)->last().energy;
+
 			if(TreeCorrelator::get()->place("MTAS_O"+to_string(ii))->status())
 				mtas_outter_individual.at(ii) =  dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_O"+to_string(ii)));
+			if( mtas_outter_individual.at(ii)->info_.size() > 0 )
+				OutterSegment.at(ii) = mtas_outter_individual.at(ii)->last().energy;
+
 		}
 
-		if(mtas_total != nullptr){
-			//for( auto& e : mtas_total->info_ )
-			//	cout << e.energy << " " << e.time << '\t';
-			//cout << endl;
-			if( mtas_total->info_.size() > 0 ){
-				double MTASTotal = mtas_total->last().energy;
-				plot(DD_BSM_MTAS_TOTAL,MTASTotal,BSMTotal);
-				plot(DD_BSM_MTAS_TOTAL_COMPRESSED,MTASTotal/10.0,BSMTotal/10.0);
-				plot(D_BSM_MTAS_SUM,MTASTotal + BSMTotal);
-				for( unsigned int ii = 0; ii < NumGates; ++ii ){
-					plot(DD_BSM_MTAS_GATES,ii,MTASGates.at(ii).first);
-					plot(DD_BSM_MTAS_GATES,ii,MTASGates.at(ii).second);
-					if( MTASTotal >= MTASGates.at(ii).first and MTASTotal <= MTASGates.at(ii).second ){
-						plot(D_BSM_MTAS_GATES+ii,BSMTotal);
-						plot(DD_BSM_TOTAL_POS_MTAS_GATES+ii,BSMPosition,BSMTotal);
-						plot(DD_BSM_F_POS_MTAS_GATES+ii,BSMPosition,FrontAvg);
-						plot(DD_BSM_B_POS_MTAS_GATES+ii,BSMPosition,BackAvg);
-						for( size_t jj = 0; jj < BSMSegVec.size(); ++jj ){
-							plot(D_BSM_MTAS_GATES+(NumGates + ii ),BSMSegVec.at(jj).GetFrontEnergy(),2*jj);
-							plot(D_BSM_MTAS_GATES+(NumGates + ii ),BSMSegVec.at(jj).GetBackEnergy(),2*jj + 1);
-						}
-						plot(DD_BSM_F_B_MTAS_GATES+ii,FrontAvg,BackAvg);
-					}	
+		//these plots can fill with real zeros and fake zeros(events that triggered pixie but were below threshold/only one pmt in a segment)
+		plot(DD_BSM_MTAS_CENTER_SUM,MTASCenter,BSMTotal);
+		plot(DD_BSM_MTAS_INNER_SUM,MTASInner,BSMTotal);
+		plot(DD_BSM_MTAS_MIDDLE_SUM,MTASMiddle,BSMTotal);
+		plot(DD_BSM_MTAS_OUTTER_SUM,MTASOutter,BSMTotal);
+		//these will fill with many zeros since many of the pmts wont actually fire
+		//will need to talk with rasshole if this is actually what we want to do
+		for( int ii = 0; ii < 6; ++ii ){
+			plot( DD_BSM_MTAS_CENTER_INDIVIDUAL, CenterSegment.at(ii),BSMTotal);
+			plot( DD_BSM_MTAS_INNER_INDIVIDUAL, InnerSegment.at(ii),BSMTotal);
+			plot( DD_BSM_MTAS_MIDDLE_INDIVIDUAL, MiddleSegment.at(ii),BSMTotal);
+			plot( DD_BSM_MTAS_OUTTER_INDIVIDUAL, OutterSegment.at(ii),BSMTotal);
+		}
+
+		plot(DD_BSM_MTAS_TOTAL,MTASTotal,BSMTotal);
+		plot(DD_BSM_MTAS_TOTAL_COMPRESSED,MTASTotal/10.0,BSMTotal/10.0);
+		plot(D_BSM_MTAS_SUM,MTASTotal + BSMTotal);
+		for( unsigned int ii = 0; ii < NumGates; ++ii ){
+			plot(DD_BSM_MTAS_GATES,ii,MTASGates.at(ii).first);
+			plot(DD_BSM_MTAS_GATES,ii,MTASGates.at(ii).second);
+			if( MTASTotal >= MTASGates.at(ii).first and MTASTotal <= MTASGates.at(ii).second ){
+				plot(D_BSM_MTAS_GATES+ii,BSMTotal);
+				plot(DD_BSM_TOTAL_POS_MTAS_GATES+ii,BSMPosition,BSMTotal);
+				plot(DD_BSM_F_POS_MTAS_GATES+ii,BSMPosition,FrontAvg);
+				plot(DD_BSM_B_POS_MTAS_GATES+ii,BSMPosition,BackAvg);
+				for( size_t jj = 0; jj < BSMSegVec.size(); ++jj ){
+					plot(D_BSM_MTAS_GATES+(NumGates + ii ),BSMSegVec.at(jj).GetFrontEnergy(),2*jj);
+					plot(D_BSM_MTAS_GATES+(NumGates + ii ),BSMSegVec.at(jj).GetBackEnergy(),2*jj + 1);
 				}
+				plot(DD_BSM_F_B_MTAS_GATES+ii,FrontAvg,BackAvg);
+			}	
+		}
+
+		if( (MTASMiddle+MTASOutter) <= 0.0 ){
+			plot(DD_BSM_MTAS_CENTER_SUM_VETO_MIDDLE_OUTTER,MTASCenter,BSMTotal);
+			plot(DD_BSM_MTAS_CENTER_SUM_INNER_SUM_VETO_MIDDLE_OUTTER,MTASCenter+MTASInner,BSMTotal);
+			plot(DD_BSM_MTAS_INNER_SUM_VETO_MIDDLE_OUTTER,MTASCenter,BSMTotal);
+			for( int ii = 0; ii < 6; ++ii ){
+				plot(DD_BSM_MTAS_CENTER_INDIVIDUAL_VETO_MIDDLE_OUTTER,CenterSegment.at(ii),BSMTotal);
+				plot(DD_BSM_MTAS_INNER_INDIVIDUAL_VETO_MIDDLE_OUTTER,InnerSegment.at(ii),BSMTotal);
 			}
-		}else{
+		}
+
+		//nothing fired inside MTAS
+		//these fill only when none of the MTAS pmts fire in the event otherwise mtas_total will exist as an object
+		if(mtas_total == nullptr){
 			plot(D_BSM_ZERO_MTAS,BSMTotal);
 			plot(DD_BSM_TOTAL_POS_ZERO_MTAS,BSMPosition,BSMTotal);
-			plot(DD_BSM_MTAS_TOTAL,0.0,BSMTotal);
-			plot(D_BSM_MTAS_SUM,BSMTotal);
 		}
 	}else{
 		if( not StandAlone )
