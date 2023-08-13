@@ -165,6 +165,7 @@ class BSMProcessor : public EventProcessor {
 		std::vector<std::pair<double,double>> MTASGates;
 		const unsigned int MaxGates = 10;
 		unsigned int NumGates;
+		int PositionSize;
 };
 
 #endif  //PAASS_BSMProcessor_H

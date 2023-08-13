@@ -53,6 +53,8 @@ namespace dammIds {
 		const unsigned DD_BSM_MTAS_CENTER_SUM_VETO_MIDDLE_OUTTER = DD_OFFSET + 62;
 		const unsigned DD_BSM_MTAS_CENTER_INDIVIDUAL_VETO_MIDDLE_OUTTER = DD_OFFSET + 63;
 		const unsigned DD_BSM_MTAS_CENTER_SUM_INNER_SUM_VETO_MIDDLE_OUTTER = DD_OFFSET + 64;
+		const unsigned DD_BSM_MTAS_CENTER_SUM_VETO_CENTER_NEIGHBORS = DD_OFFSET + 65;
+		const unsigned DD_BSM_MTAS_CENTER_INDIVIDUAL_VETO_CENTER_NEIGHBORS = DD_OFFSET + 66;
 		const unsigned DD_BSM_MTAS_INNER_SUM = DD_OFFSET + 70;
 		const unsigned DD_BSM_MTAS_INNER_INDIVIDUAL = DD_OFFSET + 71;
 		const unsigned DD_BSM_MTAS_INNER_SUM_VETO_MIDDLE_OUTTER = DD_OFFSET + 72;
@@ -75,10 +77,10 @@ void BSMProcessor::DeclarePlots(void){
 	for( unsigned int ii = 0; ii < NumGates; ++ii ){
 		string hisname = "BSM MTAS T["+to_string((int)MTASGates.at(ii).first)+","+to_string((int)MTASGates.at(ii).second)+"]";
 		DeclareHistogram1D(D_BSM_MTAS_GATES+ii,SE,hisname.c_str());
-		//DeclareHistogram2D(D_BSM_MTAS_GATES+(NumGates + ii),SD,S4,("Cal "+hisname).c_str());
+		//DeclareHistogram2D(D_BSM_MTAS_GATES+(NumGates + ii),PositionSize,S4,("Cal "+hisname).c_str());
 	}
 
-	DeclareHistogram1D(D_BSM_POSITION,SD,"BSM Position");
+	DeclareHistogram1D(D_BSM_POSITION,PositionSize,"BSM Position");
 
 	DeclareHistogram2D(DD_BSM_MTAS_GATES,S4,SC,"MTAS Gates");
 	DeclareHistogram2D(DD_BSM_MTAS_TOTAL,SC,SC,"BSM Total vs MTAS Total");
@@ -87,8 +89,10 @@ void BSMProcessor::DeclarePlots(void){
 	DeclareHistogram2D(DD_BSM_MTAS_CENTER_SUM_VETO_MIDDLE_OUTTER,SC,SC,"BSM Total vs MTAS Center Sum veto M+O");
 	DeclareHistogram2D(DD_BSM_MTAS_CENTER_INDIVIDUAL_VETO_MIDDLE_OUTTER,SC,SC,"BSM Total vs MTAS Center Individual veto M+O");
 	DeclareHistogram2D(DD_BSM_MTAS_CENTER_SUM_INNER_SUM_VETO_MIDDLE_OUTTER,SC,SC,"BSM Total vs MTAS Center+Inner Sum veto M+O");
-	DeclareHistogram2D(DD_BSM_MTAS_INNER_SUM_VETO_MIDDLE_OUTTER,SC,SC,"BSM Total vs MTAS Center Sum veto M+O");
-	DeclareHistogram2D(DD_BSM_MTAS_INNER_INDIVIDUAL_VETO_MIDDLE_OUTTER,SC,SC,"BSM Total vs MTAS Center Individual veto M+O");
+	DeclareHistogram2D(DD_BSM_MTAS_CENTER_SUM_VETO_CENTER_NEIGHBORS,SC,SC,"BSM Total vs MTAS Center Sum veto C Neighbors");
+	DeclareHistogram2D(DD_BSM_MTAS_CENTER_INDIVIDUAL_VETO_CENTER_NEIGHBORS,SC,SC,"BSM Total vs MTAS Center Individual veto C Neighbors");
+	DeclareHistogram2D(DD_BSM_MTAS_INNER_SUM_VETO_MIDDLE_OUTTER,SC,SC,"BSM Total vs MTAS Inner Sum veto M+O");
+	DeclareHistogram2D(DD_BSM_MTAS_INNER_INDIVIDUAL_VETO_MIDDLE_OUTTER,SC,SC,"BSM Total vs MTAS Inner Individual veto M+O");
 	DeclareHistogram2D(DD_BSM_MTAS_INNER_SUM,SC,SC,"BSM Total vs MTAS Inner Sum");
 	DeclareHistogram2D(DD_BSM_MTAS_INNER_INDIVIDUAL,SC,SC,"BSM Total vs MTAS Inner Individual");
 	DeclareHistogram2D(DD_BSM_MTAS_MIDDLE_SUM,SC,SC,"BSM Total vs MTAS Middle Sum");
@@ -97,17 +101,17 @@ void BSMProcessor::DeclarePlots(void){
 	DeclareHistogram2D(DD_BSM_MTAS_OUTTER_INDIVIDUAL,SC,SC,"BSM Total vs MTAS Outter Individual");
 	DeclareHistogram2D(DD_BSM_F_B,SC,SC,"BSM Front Avg vs BSM Back Avg");
 	//DeclareHistogram2D(DD_BSM_TOTAL_AVG,SD,SD,"BSM Avg vs BSM Sqrt"); 
-	//DeclareHistogram2D(DD_BSM_TOTAL_POS,SD,SC,"BSM Energy vs Position");
-	//DeclareHistogram2D(DD_BSM_TOTAL_POS_ZERO_MTAS,SD,SC,"BSM Energy vs Position No MTAS");
+	//DeclareHistogram2D(DD_BSM_TOTAL_POS,PositionSize,SC,"BSM Energy vs Position");
+	//DeclareHistogram2D(DD_BSM_TOTAL_POS_ZERO_MTAS,PositionSize,SC,"BSM Energy vs Position No MTAS");
 	//for( unsigned int ii = 0; ii < NumGates; ++ii ){
 	//	string hisname = "BSM Energy vs Position MTAS T["+to_string((int)MTASGates.at(ii).first)+","+to_string((int)MTASGates.at(ii).second)+"]";
-	//	DeclareHistogram2D(DD_BSM_TOTAL_POS_MTAS_GATES+ii,SD,SC,hisname.c_str());
+	//	DeclareHistogram2D(DD_BSM_TOTAL_POS_MTAS_GATES+ii,PositionSize,SC,hisname.c_str());
 	//	hisname = "BSM Front vs Back MTAS T["+to_string((int)MTASGates.at(ii).first)+","+to_string((int)MTASGates.at(ii).second)+"]";
 	//	DeclareHistogram2D(DD_BSM_F_B_MTAS_GATES+ii,SC,SC,hisname.c_str());
 	//	hisname = "BSM Front Energy vs Position MTAS T["+to_string((int)MTASGates.at(ii).first)+","+to_string((int)MTASGates.at(ii).second)+"]";
-	//	DeclareHistogram2D(DD_BSM_F_POS_MTAS_GATES+ii,SD,SC,hisname.c_str());
+	//	DeclareHistogram2D(DD_BSM_F_POS_MTAS_GATES+ii,PositionSize,SC,hisname.c_str());
 	//	hisname = "BSM Back Energy vs Position MTAS T["+to_string((int)MTASGates.at(ii).first)+","+to_string((int)MTASGates.at(ii).second)+"]";
-	//	DeclareHistogram2D(DD_BSM_B_POS_MTAS_GATES+ii,SD,SC,hisname.c_str());
+	//	DeclareHistogram2D(DD_BSM_B_POS_MTAS_GATES+ii,PositionSize,SC,hisname.c_str());
 	//}
 
 	DeclareHistogram2D(DD_BSM_MTAS_TOTAL_COMPRESSED,SB,SB,"BSM Total/10 vs MTAS Total/10");
@@ -133,6 +137,7 @@ BSMProcessor::BSMProcessor(int numsegments,bool alone,vector<pair<double,double>
 	BackCorrection.constant = bc;
 	BackCorrection.slope = bs;
 	BackCorrection.mean = bm;
+	PositionSize = SA;
 }
 		
 bool BSMProcessor::PreProcess(RawEvent &event) {
@@ -235,7 +240,7 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 
 
 		}
-		BSMPosition = (SD/2)*(1.0+((FrontAvg-BackAvg)/(FrontAvg+BackAvg)));
+		BSMPosition = (PositionSize/2)*(1.0+((FrontAvg-BackAvg)/(FrontAvg+BackAvg)));
 		FrontAvg = FrontCorrection.Correct(FrontAvg,BSMPosition);
 		BackAvg = BackCorrection.Correct(BackAvg,BSMPosition);
 		BSMTotal = (FrontAvg + BackAvg)/static_cast<double>(2*NumFire);
@@ -243,9 +248,9 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 		plot(D_BSM_TOTAL,BSMTotal);
 		plot(DD_BSM_F_B,FrontAvg,BackAvg);
 		//plot(DD_BSM_TOTAL_AVG,BSMTotal,sqrt(FrontAvg*BackAvg));
-		//BSMPosition = (SD/2)*(1.0+((FrontAvg-BackAvg)/(FrontAvg+BackAvg)));
-		plot(D_BSM_POSITION,(SD/2)*(1.0+((FrontAvg-BackAvg)/(FrontAvg+BackAvg))));
-		//plot(DD_BSM_TOTAL_POS,(SD/2)*(1.0+((FrontAvg-BackAvg)/(FrontAvg+BackAvg))),BSMTotal);
+		//BSMPosition = (PositionSize/2)*(1.0+((FrontAvg-BackAvg)/(FrontAvg+BackAvg)));
+		plot(D_BSM_POSITION,(PositionSize/2)*(1.0+((FrontAvg-BackAvg)/(FrontAvg+BackAvg))));
+		//plot(DD_BSM_TOTAL_POS,(PositionSize/2)*(1.0+((FrontAvg-BackAvg)/(FrontAvg+BackAvg))),BSMTotal);
 	}
 
 	EventData TotalData(EarliestTime,BSMTotal);
@@ -366,6 +371,19 @@ bool BSMProcessor::Process(RawEvent &event) {
 
 		}
 
+		bool NeighborsFire = false;
+		for( int ii = 0; ii < 6; ++ii ){
+			NeighborsFire |= ((CenterSegment.at(ii) > 0.0) & ((CenterSegment.at((ii+1)%6) > 0.0) | (CenterSegment.at((5+ii)%6) > 0.0 )) );
+		}
+
+		//this catches everything that is multiplicity 3 and less in center
+		if( !NeighborsFire ){
+			plot(DD_BSM_MTAS_CENTER_SUM_VETO_CENTER_NEIGHBORS,MTASCenter,BSMTotal);
+			for( int ii = 0; ii < 6; ++ii ){
+				plot(DD_BSM_MTAS_CENTER_INDIVIDUAL_VETO_CENTER_NEIGHBORS,CenterSegment.at(ii),BSMTotal);
+			}
+		}
+
 		//these plots can fill with real zeros and fake zeros(events that triggered pixie but were below threshold/only one pmt in a segment)
 		plot(DD_BSM_MTAS_CENTER_SUM,MTASCenter,BSMTotal);
 		plot(DD_BSM_MTAS_INNER_SUM,MTASInner,BSMTotal);
@@ -402,7 +420,7 @@ bool BSMProcessor::Process(RawEvent &event) {
 		if( (MTASMiddle+MTASOutter) <= 0.0 ){
 			plot(DD_BSM_MTAS_CENTER_SUM_VETO_MIDDLE_OUTTER,MTASCenter,BSMTotal);
 			plot(DD_BSM_MTAS_CENTER_SUM_INNER_SUM_VETO_MIDDLE_OUTTER,MTASCenter+MTASInner,BSMTotal);
-			plot(DD_BSM_MTAS_INNER_SUM_VETO_MIDDLE_OUTTER,MTASCenter,BSMTotal);
+			plot(DD_BSM_MTAS_INNER_SUM_VETO_MIDDLE_OUTTER,MTASInner,BSMTotal);
 			for( int ii = 0; ii < 6; ++ii ){
 				plot(DD_BSM_MTAS_CENTER_INDIVIDUAL_VETO_MIDDLE_OUTTER,CenterSegment.at(ii),BSMTotal);
 				plot(DD_BSM_MTAS_INNER_INDIVIDUAL_VETO_MIDDLE_OUTTER,InnerSegment.at(ii),BSMTotal);
