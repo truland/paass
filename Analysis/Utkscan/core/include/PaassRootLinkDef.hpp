@@ -28,9 +28,6 @@
 #pragma link C++ struct processor_struct::NEXT+;
 #pragma link C++ class std::vector<processor_struct::NEXT>+;
 
-#pragma link C++ struct processor_struct::PID+;
-#pragma link C++ class std::vector<processor_struct::PID>+;
-
 #pragma link C++ struct processor_struct::PSPMT+;
 #pragma link C++ class std::vector<processor_struct::PSPMT>+;
 
@@ -40,8 +37,8 @@
 #pragma link C++ struct processor_struct::SINGLEBETA+;
 #pragma link C++ class std::vector<processor_struct::SINGLEBETA>+;
 
-#pragma link C++ struct processor_struct::VANDLES+;
-#pragma link C++ class std::vector<processor_struct::VANDLES>+;
+#pragma link C++ struct processor_struct::VANDLE+;
+#pragma link C++ class std::vector<processor_struct::VANDLE>+;
 
 #pragma link C++ class PixTreeEvent+;
 #pragma link C++ class std::vector<PixTreeEvent>+;
