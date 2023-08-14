@@ -233,6 +233,8 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 				Bsmstruct.tdiff = (segIter.GetFrontTimeInNS() - segIter.GetBackTimeInNS());
 				Bsmstruct.gSegmentID = segIter.gBSMSegID_;
 				Bsmstruct.segmentNum = (segIter.gBSMSegID_+1)/2;
+				Bsmstruct.ftrace = segIter.segFront_->GetTrace();
+				Bsmstruct.btrace = segIter.segBack_->GetTrace();
 				
 				pixie_tree_event_->bsm_vec_.emplace_back(Bsmstruct);
 				Bsmstruct = processor_struct::BSM_DEFAULT_STRUCT;

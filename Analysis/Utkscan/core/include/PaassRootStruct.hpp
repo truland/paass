@@ -17,6 +17,8 @@ struct BSM {
     double tdiff = -999;
     int gSegmentID = -999;   //Global Segment ID (0-47)
     int segmentNum = -999;  //Segment id per ring (1-6)
+    std::vector<unsigned int> ftrace = {};  //The trace if present
+    std::vector<unsigned int> btrace = {};  //The trace if present
 };
 static const BSM BSM_DEFAULT_STRUCT;
 
