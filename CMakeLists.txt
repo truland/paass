@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.1)
 project(PAASS C CXX Fortran)
 
 #Set the C++ standard to c++11.
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 #Use rpath on Mac OS
 set(CMAKE_MACOSX_RPATH TRUE)
