@@ -62,7 +62,6 @@ target_link_libraries(PaassRootStruct ${ROOT_LIBRARIES})
 ROOT_GENERATE_DICTIONARY(MMTASStruct_root MMTASStruct.hpp LINKDEF core/include/MMTASLinkDef.hpp )
 add_library(MMTASStruct SHARED MMTASStruct_root.cxx MMTASStruct_root)
 target_link_libraries(MMTASStruct ${ROOT_LIBRARIES})  
-
 #End T.T. King Additions
 #------------------------------------------------------------------------------
 
@@ -90,14 +89,14 @@ else (PAASS_USE_HRIBF)
     target_link_libraries(utkscanor ${HRIBF_LIBRARIES})
 endif (NOT PAASS_USE_HRIBF)
 
-target_link_libraries(${SCAN_NAME} ${LIBS} PaassRootStruct MMTASStruct PaassScanStatic ResourceStatic PaassCoreStatic PugixmlStatic PaassResourceStatic )
+target_link_libraries(${SCAN_NAME} ${LIBS} PaassRootStruct MMTASStruct PaassScanStatic ResourceStatic PaassCoreStatic PugixmlStatic PaassResourceStatic "-Wl,-no_compact_unwind")
 
 if (PAASS_USE_GSL)
     target_link_libraries(${SCAN_NAME} ${GSL_LIBRARIES})
 endif (PAASS_USE_GSL)
 
 if (PAASS_USE_ROOT)
-	target_link_libraries(${SCAN_NAME} ${ROOT_LIBRARIES} PaassRootStruct MMTASStruct)
+    target_link_libraries(${SCAN_NAME} ${ROOT_LIBRARIES} PaassRootStruct MMTASStruct)
 endif (PAASS_USE_ROOT)
 
 #------------------------------------------------------------------------------
