@@ -175,6 +175,7 @@ MtasProcessor::MtasProcessor(bool newcenter,bool zerosuppress,double thresh,int 
 }
 
 bool MtasProcessor::PreProcess(RawEvent &event) {
+	//cout << "INSIDE MtasProcessor::PreProcess" << endl;
 	if (!EventProcessor::PreProcess(event))
 		return false;
 
@@ -227,6 +228,9 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 		}
 
 		int GlobalMtasSegID = RingOffset + segmentNum;
+		if( GlobalMtasSegID < 0 ){
+			cout << RingOffset << '\t' << segmentNum << '\t' << (*chanEvtIter)->GetChanID().GetGroup() << '\t' << (*chanEvtIter)->GetChanID().GetSubtype() << endl;
+		}
 		int GlobalMtasChanID = (segmentNum + RingOffset) * 2 + chanOffset;
 
 		//THE SATURATE AND PILEUP CHECK SHOULD NOT BE PERFORMED ON LOGIC SIGNALS IN HISTORICAL DATA
@@ -255,6 +259,7 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 			}
 		}
 	}  //! end loop over chanEvents.
+	//cout << "INSIDE MtasProcessor::PreProcess" << endl;
 
 	//! begin loop over segments for sums
 	centerSum = make_pair(0,not HasZeroSuppression);
@@ -272,6 +277,7 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 			CurrNumCenter++;
 		}
 	}
+	//cout << "INSIDE MtasProcessor::PreProcess" << endl;
 	double segmentAvg = 0.0;
 	double segTdiff = 0.0;
 	double position = 0.0;
@@ -311,14 +317,21 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 			outerSum.first += segmentAvg;
 		}
 	}
+	//cout << "INSIDE MtasProcessor::PreProcess" << endl;
 	//! loop over segments for ploting
 	for (auto segIter = MtasSegVec.begin(); segIter != MtasSegVec.end(); ++segIter) {
 		int segmentID = segIter->gMtasSegID_;
+		//cout << "segmentID" << endl;
 		auto segmentAvgresult = segIter->GetSegmentAverageEnergy();
+		//cout << "segmentAvgresult" << endl;
 		auto segTdiffresult = segIter->GetSegmentTdiffInNS();
+		//cout << "segTdiffresult" << endl;
 		auto positionresult = segIter->GetSegmentPosition();
+		//cout << "positionresult" << endl;
 		auto FrontEnergyResult = segIter->GetFrontEnergy();
+		//cout << "FrontEnergyResult" << endl;
 		auto BackEnergyResult = segIter->GetBackEnergy();
+		//cout << "BackEnergyResult" << endl;
 		if( (not segmentAvgresult.second) or (not segTdiffresult.second) or (not positionresult.second) or (not FrontEnergyResult.second) or (not BackEnergyResult.second)){
 			continue;
 		}else{
@@ -329,6 +342,7 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 			backenergy = BackEnergyResult.first;
 		}
 		//! Begin Root Output stuff.
+		//cout << "Started ROOT " << endl;
 		if (DetectorDriver::get()->GetSysRootOutput() && segIter->IsValidSegment()) {
 			Mtasstruct.energy = segIter->GetSegmentAverageEnergy().first;
 			Mtasstruct.fEnergy = segIter->GetFrontEnergy().first;
@@ -351,6 +365,7 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 			pixie_tree_event_->mtas_vec_.emplace_back(Mtasstruct);
 			Mtasstruct = processor_struct::MTAS_DEFAULT_STRUCT;
 		}
+		//cout << "Finished ROOT " << endl;
 	
 		if (segmentID >= 0 && segmentID <= 5 ){
 			//D_MTAS_SUM_FB + 50 + OUTER_OFFSET + (2* i ),
@@ -397,6 +412,7 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 			plot(DD_MTAS_IMO_T,totalSum.first,segmentAvg);
 		}
 	}
+	//cout << "INSIDE MtasProcessor::PreProcess" << endl;
 
 	//for(unsigned int ii = 0; ii < 6; ++ii){
 	//	bool isSingleSegmentFire = true;
@@ -499,10 +515,12 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 
 	SignalTime = EarliestTime;
 
+	//cout << "LEAVING MtasProcessor::PreProcess" << endl;
 	return true;
 }
 
 bool MtasProcessor::Process(RawEvent &event) {
+	//cout << "INSIDE MtasProcessor::Process" << endl;
 	if (!EventProcessor::Process(event))
 		return false;
 
@@ -541,6 +559,8 @@ bool MtasProcessor::Process(RawEvent &event) {
 		}
 	}
 
+	//cout << "LEAVING MtasProcessor::Process" << endl;
 	EndProcess();
+	//cout << "LEAVING MtasProcessor::Process" << endl;
 	return true;
 }
