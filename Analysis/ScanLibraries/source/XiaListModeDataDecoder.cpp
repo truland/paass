@@ -171,7 +171,7 @@ vector<XiaData *> XiaListModeDataDecoder::DecodeBuffer(unsigned int *buf, const 
         //   printf("\n");
 
           data->SetExternalTimeStamp(CalculateExternalTimeStamp(*data));
-          if(headerLength);
+          //if(headerLength);
           // printf("headerLength %u, ", headerLength);
           // printf("ExternalTimeHigh %u,", data->GetExternalTimeHigh());
           // printf("ExternalTimeLow %u,", data->GetExternalTimeLow());

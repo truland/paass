@@ -1,6 +1,6 @@
 # @authors C. R. Thornsberry, S. V. Paulauskas
 if (PAASS_USE_HRIBF)
-    set(CMAKE_Fortran_FLAGS ${CMAKE_Fortran_FLAGS} "-Wl,-no_compact_unwinding")
+    set(CMAKE_Fortran_FLAGS ${CMAKE_Fortran_FLAGS} "  -fsecond-underscore -Wl,-no_compact_unwind")
     add_executable(skeleton Skeleton.cpp SkeletonUnpacker.cpp SkeletonInterface.cpp $<TARGET_OBJECTS:ScanorObjects>)
     target_link_libraries(skeleton ${HRIBF_LIBRARIES})
 else ()

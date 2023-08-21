@@ -1,5 +1,5 @@
 #We need fPIC below to create shared libraries.
-set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fsecond-underscore -fPIC -Wl,-no_compact_unwinding")
+set(CMAKE_Fortran_FLAGS ${CMAKE_Fortran_FLAGS}" -fsecond-underscore -fPIC -Wl,-no_compact_unwind")
 
 if (${CMAKE_Fortran_COMPILER} MATCHES gfortran)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D LINK_GFORTRAN")
