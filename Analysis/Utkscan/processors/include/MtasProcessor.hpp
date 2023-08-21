@@ -46,14 +46,25 @@ class MtasSegment {
 		}
 		std::pair<double,bool> GetSegmentTdiffInNS() const { 
 			double clockInSeconds;
+			//std::cout << "Get Clock" << std::endl;
 			if (PixieRev == "F"){
-				clockInSeconds = Globals::get()->GetClockInSeconds(segFront_->GetChanID().GetModFreq());
+				//std::cout << "Rev F" << std::endl;
+				//std::cout << segFront_->GetChanID().GetModFreq() << std::endl;
+				//std::cout << "Rev F" << std::endl;
+				if( segFront_ != nullptr ){
+					clockInSeconds = Globals::get()->GetClockInSeconds(segFront_->GetChanID().GetModFreq());
+				}else{
+					clockInSeconds = Globals::get()->GetClockInSeconds(segBack_->GetChanID().GetModFreq());
+				}
 			} else {
 				clockInSeconds = Globals::get()->GetClockInSeconds();
 			}
+			//std::cout << "Finished Get Clock" << std::endl;
 			if( IsValidSegment() ){
+				//std::cout << "Valid Segment" << std::endl;
 				return std::make_pair((segFront_->GetTimeSansCfd() - segBack_->GetTimeSansCfd()) * clockInSeconds * 1.0e9,true);
 			}else{
+				//std::cout << "InValid Segment" << std::endl;
 				return std::make_pair(0.0,not HasZeroSuppression);
 			}
 		}

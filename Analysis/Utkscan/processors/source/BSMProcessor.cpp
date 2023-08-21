@@ -141,6 +141,7 @@ BSMProcessor::BSMProcessor(int numsegments,bool alone,vector<pair<double,double>
 }
 		
 bool BSMProcessor::PreProcess(RawEvent &event) {
+	//cout << "INSIDE BSMProcessor::PreProcess" << endl;
 	if (!EventProcessor::PreProcess(event))
 		return false;
 
@@ -258,10 +259,12 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 	EventData TotalData(EarliestTime,BSMTotal);
 	TreeCorrelator::get()->place("BSM_Total")->activate(TotalData);
 
+	//cout << "LEAVE BSMProcessor::PreProcess" << endl;
 	return true;
 }
 
 bool BSMProcessor::Process(RawEvent &event) {
+	//cout << "INSIDE BSMProcessor::Process" << endl;
 	if (!EventProcessor::Process(event))
 		return false;
 
@@ -440,6 +443,8 @@ bool BSMProcessor::Process(RawEvent &event) {
 			throw "ERROR BSMProcessor::Process BSM isn't in standalone mode and the treecorrelator for MTAS_Total and others isn't setup";
 	}
 
+	//cout << "LEAVING BSMProcessor::Process" << endl;
 	EndProcess();
+	//cout << "LEAVING BSMProcessor::Process" << endl;
 	return true;
 }
