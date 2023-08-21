@@ -1,9 +1,9 @@
 # @authors S. V. Paulauskas
 set(PROCESSOR_SOURCES
-        BetaScintProcessor.cpp
+        BatoProcessor.cpp
 	BSMProcessor.cpp
+        BetaScintProcessor.cpp
         DoubleBetaProcessor.cpp
-        CompassProcessor.cpp
         CloverCalibProcessor.cpp
         CloverFragProcessor.cpp
         CloverProcessor.cpp
@@ -23,6 +23,7 @@ set(PROCESSOR_SOURCES
 	MMTASProcessor.cpp
 	MtasProcessor.cpp
         NeutronScintProcessor.cpp
+        PidProcessor.cpp
         PositionProcessor.cpp
         PspmtProcessor.cpp
         RootDevProcessor.cpp

@@ -77,7 +77,7 @@ VandleProcessor::VandleProcessor(const std::vector<std::string> &typeList, const
 void VandleProcessor::DeclarePlots(void) {
     for(set<string>::iterator it = requestedTypes_.begin(); it != requestedTypes_.end(); it++) {
         pair<unsigned int,unsigned int> offset = ReturnOffset(*it);
-        DeclareHistogram2D(DD_TQDCBARS + offset.first, SD, S8, "Det Loc vs Trace QDC - Right Even - Left Odd");
+        DeclareHistogram2D(DD_TQDCBARS + offset.first, SE, S8, "Det Loc vs Trace QDC - Right Even - Left Odd");
         DeclareHistogram2D(DD_MAXIMUMBARS + offset.first, SD, S8,"Det Loc vs Maximum - Right Even - Left Odd");
         DeclareHistogram2D(DD_TIMEDIFFBARS + offset.first, SB, S6, "Bars vs. Time Differences");
         DeclareHistogram2D(DD_TOFBARS + offset.first, SC, S6, "Bar vs. Time of Flight");
@@ -142,8 +142,8 @@ bool VandleProcessor::Process(RawEvent &event) {
     static const vector<ChanEvent *> &pspmtStarts = event.GetSummary("pspmt:dynode_high:start")->GetList();
     static const vector<ChanEvent *> &singleBetaStarts = event.GetSummary("beta:single:start")->GetList();
 
-    static const vector<ChanEvent *> &LIonVeto =  event.GetSummary("pspmt:veto")->GetList();
-    static const vector<ChanEvent *> &IondE=  event.GetSummary("pspmt:ion")->GetList();
+    static const vector<ChanEvent *> &LIonVeto =  event.GetSummary("pspmt:RIT")->GetList();
+    static const vector<ChanEvent *> &IondE=  event.GetSummary("pspmt:FIT")->GetList();
 
     vector<ChanEvent *> startEvents;
     startEvents.insert(startEvents.end(), betaStarts.begin(), betaStarts.end());
@@ -218,7 +218,7 @@ void VandleProcessor::AnalyzeBarStarts(const BarDetector &bar, unsigned int &bar
                 vandles.wcTdiff = bar.GetCorTimeDiff();
 
                 pixie_tree_event_->vandle_vec_.emplace_back(vandles);
-                vandles = processor_struct::VANDLES_DEFAULT_STRUCT;
+                vandles = processor_struct::VANDLE_DEFAULT_STRUCT;
             }
         }
 }
@@ -268,7 +268,7 @@ void VandleProcessor::AnalyzeStarts(const BarDetector &bar, unsigned int &barLoc
                     vandles.wcTdiff = bar.GetCorTimeDiff();
                     
                     pixie_tree_event_->vandle_vec_.emplace_back(vandles);
-                    vandles = processor_struct::VANDLES_DEFAULT_STRUCT;
+                    vandles = processor_struct::VANDLE_DEFAULT_STRUCT;
                 }
             }
         }

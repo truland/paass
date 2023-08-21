@@ -47,7 +47,11 @@ class BSMSegment {
 		double GetSegmentTdiffInNS() const { 
 			double clockInSeconds;
 			if (PixieRev == "F"){
-				clockInSeconds = Globals::get()->GetClockInSeconds(segFront_->GetChanID().GetModFreq());
+				if( segFront_ != nullptr ){
+					clockInSeconds = Globals::get()->GetClockInSeconds(segFront_->GetChanID().GetModFreq());
+				}else{
+					clockInSeconds = Globals::get()->GetClockInSeconds(segBack_->GetChanID().GetModFreq());
+				}
 			} else {
 				clockInSeconds = Globals::get()->GetClockInSeconds();
 			}
