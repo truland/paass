@@ -23,9 +23,9 @@
 #include "WaveformAnalyzer.hpp"
 
 //These headers handle processing of specific detector types
+#include "BatoProcessor.hpp"
 #include "BetaScintProcessor.hpp"
 #include "BSMProcessor.hpp"
-#include "CompassProcessor.hpp"
 #include "CloverCalibProcessor.hpp"
 #include "CloverFragProcessor.hpp"
 #include "CloverProcessor.hpp"
@@ -42,9 +42,10 @@
 #include "LitePositionProcessor.hpp"
 #include "LogicProcessor.hpp"
 #include "McpProcessor.hpp"
-#include "MMTASProcessor.hpp"
 #include "MtasProcessor.hpp"
+#include "MMTASProcessor.hpp"
 #include "NeutronScintProcessor.hpp"
+#include "PidProcessor.hpp"
 #include "PositionProcessor.hpp"
 #include "PspmtProcessor.hpp"
 #include "RootDevProcessor.hpp"
@@ -106,7 +107,9 @@ vector<EventProcessor *> DetectorDriverXmlParser::ParseProcessors(const pugi::xm
         string name = processor.attribute("name").as_string();
 
         messenger_.detail("Loading " + name);
-        if (name == "BetaScintProcessor") {
+        if (name == "BatoProcessor") {
+            vecProcess.push_back(new BatoProcessor());
+        } else if (name == "BetaScintProcessor") {
             vecProcess.push_back(new BetaScintProcessor(
                 processor.attribute("gamma_beta_limit").as_double(200.e-9),
                 processor.attribute("energy_contraction").as_double(1.0)));
@@ -247,6 +250,10 @@ vector<EventProcessor *> DetectorDriverXmlParser::ParseProcessors(const pugi::xm
             vecProcess.push_back(new NeutronScintProcessor());
         } else if (name == "PositionProcessor") {
             vecProcess.push_back(new PositionProcessor());
+        } else if (name == "PidProcessor") {
+            vecProcess.push_back(new PidProcessor(
+                processor.attribute("yso_thresh").as_double(10.0),
+                processor.attribute("fit_thresh").as_double(10.0)));
         } else if (name == "PspmtProcessor") {
             vecProcess.push_back(new PspmtProcessor(
                 processor.attribute("vd").as_string("SIB062_0926"),
@@ -261,8 +268,6 @@ vector<EventProcessor *> DetectorDriverXmlParser::ParseProcessors(const pugi::xm
             vecProcess.push_back(new SingleBetaProcessor());
         } else if (name == "RootDevProcessor") {
             vecProcess.push_back(new RootDevProcessor());
-        } else if (name == "CompassProcessor") {
-            vecProcess.push_back(new CompassProcessor());
         } else if (name == "MMTASProcessor") {
             vecProcess.push_back(new MMTASProcessor());
         } else if (name == "MtasProcessor") {

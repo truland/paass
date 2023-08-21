@@ -9,6 +9,15 @@
 
 namespace processor_struct {
 
+struct BATO {
+    std::vector<double> pQDCsums = {};
+    double time = -999;
+    double energy = -999;
+    double qdc = -999;
+    int detNum = -999;
+};
+static const BATO BATO_DEFAULT_STRUCT;
+
 struct BSM {
     double energy = -999;
     double fEnergy = -999;
@@ -22,16 +31,16 @@ struct BSM {
 };
 static const BSM BSM_DEFAULT_STRUCT;
 
-
-struct CLOVERS {
+struct CLOVER {
     double energy = -999;
     double rawEnergy = -999;
     double time = -999;
     int detNum = -999;
     int cloverNum = -999;
+    bool cloverHigh = false;
 };
 
-static const CLOVERS CLOVERS_DEFAULT_STRUCT;
+static const CLOVER CLOVER_DEFAULT_STRUCT;
 
 struct DOUBLEBETA {
     int detNum = -999;
@@ -90,6 +99,7 @@ struct MTAS {
 };
 static const MTAS MTAS_DEFAULT_STRUCT;
 
+
 struct NEXT {
     /* Data container for NEXT */
    double tof = -9999;
@@ -109,9 +119,26 @@ struct NEXT {
    double sTime = -9999;
    double sQdc = -9999;
 };
+static const NEXT NEXT_DEFAULT_STRUCT;
+
+struct PID {
+    double rfq_time = -999;
+    double fp_time = -999;
+    double pinCfd_time = -999;
+    double pin_0_time = -999;
+    double pin_1_time = -999;
+    double pin_0_energy = -999;
+    double pin_1_energy = -999;
+    double tac_0 = -999;
+    double tac_1 = -999;
+    double tof0 = -999;
+    double tof1 = -999;
+};
+static const PID PID_DEFAULT_STRUCT;
 
 struct PSPMT {
     double energy = -999;
+     double qdc = -999;
     double time = -999;
     TString subtype = "";
     TString tag = "";
@@ -128,6 +155,9 @@ struct ROOTDEV {
     double rawEnergy = -999;
     double timeSansCfd = -999;
     double time = -999;
+    bool cfdForcedBit = false;
+    double cfdFraction = -999;
+    int cfdSourceBit = -999;
     int detNum = -999;   //the instance number of RD in the xml Map
     int modNum = -999;   // the physical module number
     int chanNum = -999;  // the physical channel number
@@ -154,13 +184,13 @@ struct SINGLEBETA {
     int detNum = -999;
     double energy = -999;
     double rawEnergy = -999;
-    double time = - 999;
+    double time = -999;
     double qdc = -999;
     double tMaxVal = -999;
     bool isLowResBeta = false;
     bool isHighResBeta = false;
     bool hasTraceFit = false;
-}; 
+};
 static const SINGLEBETA SINGLEBETA_DEFAULT_STRUCT;
 
 struct VANDLE {
@@ -173,13 +203,14 @@ struct VANDLE {
     double tAvg = -999;
     double tDiff = -999;
     double wcTavg = -999;
-    double wcTdiff = -999;    
+    double wcTdiff = -999;
     int sNum = -999;  //start detector number
     int vMulti = 0;
     double sTime = -999;
     double sQdc = -999;
 };
-static const VANDLE VANDLES_DEFAULT_STRUCT;
+static const VANDLE VANDLE_DEFAULT_STRUCT;
+
 }  // namespace processor_struct
 
 class PixTreeEvent : public TObject {
@@ -192,15 +223,17 @@ class PixTreeEvent : public TObject {
         externalTS2 = obj.externalTS2;
         eventNum = obj.eventNum;
         fileName = obj.fileName;
+        bato_vec_ = obj.bato_vec_;
 	bsm_vec_ = obj.bsm_vec_;
         clover_vec_ = obj.clover_vec_;
         doublebeta_vec_ = obj.doublebeta_vec_;
-        gamma_scint_vec_ = obj.gamma_scint_vec_;
+        gammascint_vec_ = obj.gammascint_vec_;
         logic_vec_ = obj.logic_vec_;
         mtas_vec_ = obj.mtas_vec_;
         next_vec_ = obj.next_vec_;
+        pid_vec_ = obj.pid_vec_;
         pspmt_vec_ = obj.pspmt_vec_;
-        root_dev_vec_ = obj.root_dev_vec_;
+        rootdev_vec_ = obj.rootdev_vec_;
         singlebeta_vec_ = obj.singlebeta_vec_;
         vandle_vec_ = obj.vandle_vec_;
     }
@@ -213,15 +246,17 @@ class PixTreeEvent : public TObject {
         externalTS2 = 0;
         eventNum = 0;
         fileName = "";
+        bato_vec_.clear();
 	bsm_vec_.clear();
         clover_vec_.clear();
         doublebeta_vec_.clear();
-        gamma_scint_vec_.clear();
+        gammascint_vec_.clear();
         logic_vec_.clear();
 	mtas_vec_.clear();
         next_vec_.clear();
+        pid_vec_.clear();
         pspmt_vec_.clear();
-        root_dev_vec_.clear();
+        rootdev_vec_.clear();
         singlebeta_vec_.clear();
         vandle_vec_.clear();
     }
@@ -231,15 +266,17 @@ class PixTreeEvent : public TObject {
     ULong64_t externalTS2 = 0;
     Double_t eventNum = 0;
     std::string fileName = "";
+    std::vector<processor_struct::BATO> bato_vec_;
     std::vector<processor_struct::BSM> bsm_vec_;
-    std::vector<processor_struct::CLOVERS> clover_vec_;
+    std::vector<processor_struct::CLOVER> clover_vec_;
     std::vector<processor_struct::DOUBLEBETA> doublebeta_vec_;
-    std::vector<processor_struct::GAMMASCINT> gamma_scint_vec_;
+    std::vector<processor_struct::GAMMASCINT> gammascint_vec_;
     std::vector<processor_struct::LOGIC> logic_vec_;
     std::vector<processor_struct::MTAS> mtas_vec_;
     std::vector<processor_struct::NEXT> next_vec_;
+    std::vector<processor_struct::PID> pid_vec_;
     std::vector<processor_struct::PSPMT> pspmt_vec_;
-    std::vector<processor_struct::ROOTDEV> root_dev_vec_;
+    std::vector<processor_struct::ROOTDEV> rootdev_vec_;
     std::vector<processor_struct::SINGLEBETA> singlebeta_vec_;
     std::vector<processor_struct::VANDLE> vandle_vec_;
 

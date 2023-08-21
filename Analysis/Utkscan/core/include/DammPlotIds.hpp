@@ -151,6 +151,18 @@ namespace dammIds {
         const int RANGE = 20;//!< Range for the PulserProcessor Hists
     }
 
+    //in PidProcessor.cpp
+    namespace pid {
+        const int OFFSET = 3500; //!< Offset for the PidProcessor Hists
+        const int RANGE = 50;//!< Range for the PidProcessor Hists
+    }
+
+    //in BatoProcessor.cpp
+    namespace bato {
+        const int OFFSET = 3600; //!< Offset for the BatoProcessor Hists
+        const int RANGE = 50;//!< Range for the BatoProcessor Hists
+    }
+
     /// in SsdProcessor.cpp
     namespace ssd {
         const int OFFSET = 4100;//!< Offset for SsdProcessor
@@ -208,6 +220,7 @@ namespace dammIds {
         const int OFFSET = 7200; //!< Offset for MTASProcessor
         const int RANGE = 800; //!< Range for MTASProcessor
     }
+
 
     /// Definitions for all of the traces
     namespace analyzers {
