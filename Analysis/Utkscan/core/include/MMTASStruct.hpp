@@ -17,6 +17,7 @@ struct  MMTASStruct{
     int chanNum = -999;  // the physical channel number
     TString subtype = "";
     TString group = "";
+    TString tag = "";
     bool pileup = false;                   //Did pixie detect pileup in the event
     bool saturation = false;               //Did the trace go out of the ADC range
     std::vector<unsigned int> trace = {};  //The trace if present

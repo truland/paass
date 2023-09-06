@@ -59,6 +59,10 @@ bool MMTASProcessor::Process(RawEvent &event) {
 		MMstruct.chanNum = (*it)->GetChannelNumber();
 		MMstruct.subtype = (*it)->GetChanID().GetSubtype();
 		MMstruct.group = (*it)->GetChanID().GetGroup();
+		auto taglist = (*it)->GetChanID().GetTags();
+		for( auto& tag : taglist )
+			MMstruct.tag += (tag+";");
+
 		MMstruct.pileup = (*it)->IsPileup();
 		MMstruct.saturation = (*it)->IsSaturated();
 
