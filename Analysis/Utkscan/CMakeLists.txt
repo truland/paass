@@ -89,7 +89,11 @@ else (PAASS_USE_HRIBF)
     target_link_libraries(utkscanor ${HRIBF_LIBRARIES})
 endif (NOT PAASS_USE_HRIBF)
 
-target_link_libraries(${SCAN_NAME} ${LIBS} PaassRootStruct MMTASStruct PaassScanStatic ResourceStatic PaassCoreStatic PugixmlStatic PaassResourceStatic "-Wl,-no_compact_unwind")
+if( DARWIN )
+	target_link_libraries(${SCAN_NAME} ${LIBS} PaassRootStruct MMTASStruct PaassScanStatic ResourceStatic PaassCoreStatic PugixmlStatic PaassResourceStatic "-Wl,-no_compact_unwind")
+else()
+	target_link_libraries(${SCAN_NAME} ${LIBS} PaassRootStruct MMTASStruct PaassScanStatic ResourceStatic PaassCoreStatic PugixmlStatic PaassResourceStatic)
+endif()
 
 if (PAASS_USE_GSL)
     target_link_libraries(${SCAN_NAME} ${GSL_LIBRARIES})
