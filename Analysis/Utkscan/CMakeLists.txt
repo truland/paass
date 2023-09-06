@@ -89,7 +89,7 @@ else (PAASS_USE_HRIBF)
     target_link_libraries(utkscanor ${HRIBF_LIBRARIES})
 endif (NOT PAASS_USE_HRIBF)
 
-if( DARWIN )
+if( ${CMAKE_SYSTEM_NAME} MATCHES "Darwin" )
 	target_link_libraries(${SCAN_NAME} ${LIBS} PaassRootStruct MMTASStruct PaassScanStatic ResourceStatic PaassCoreStatic PugixmlStatic PaassResourceStatic "-Wl,-no_compact_unwind")
 else()
 	target_link_libraries(${SCAN_NAME} ${LIBS} PaassRootStruct MMTASStruct PaassScanStatic ResourceStatic PaassCoreStatic PugixmlStatic PaassResourceStatic)
