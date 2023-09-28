@@ -12,6 +12,8 @@
 #include "UtkUnpacker.hpp"
 #include "XmlInterface.hpp"
 
+#include "Globals.hpp"
+
 using namespace std;
 
 // Define a pointer to an OutputHisFile for later use.
@@ -29,6 +31,7 @@ UtkScanInterface::~UtkScanInterface() {
 #ifndef USE_HRIBF
     if (init_)
         delete (output_his);
+    //add in #else to catch properly deleting the root/detectordriver things
 #endif
 }
 

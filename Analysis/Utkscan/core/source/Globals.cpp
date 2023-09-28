@@ -20,15 +20,23 @@ Globals *Globals::instance_ = NULL;
 
 ///Instance is created upon first call
 Globals *Globals::get() {
-    if (!instance_)
+    if (!instance_){
         instance_ = new Globals("Config.xml");
+	DECODEDHITS = 0;
+	RAWHITS = 0;
+	RDHITS = 0;
+    }
     return (instance_);
 }
 
 ///Instance is created upon first call
 Globals *Globals::get(const std::string &file) {
-    if (!instance_)
+    if (!instance_){
         instance_ = new Globals(file);
+	DECODEDHITS = 0;
+	RAWHITS = 0;
+	RDHITS = 0;
+    }
     return (instance_);
 }
 

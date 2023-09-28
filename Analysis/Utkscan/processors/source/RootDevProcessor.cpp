@@ -12,6 +12,8 @@
 #include <iostream>
 #include <sstream>
 
+#include "Globals.hpp"
+
 #include "DetectorDriver.hpp"
 #include "DetectorLibrary.hpp"
 #include "HelperFunctions.hpp"
@@ -20,12 +22,16 @@
 
 using namespace std;
 
+unsigned long long RDHITS = 0;
+unsigned long long RDEVENTS = 0;
+
 RootDevProcessor::RootDevProcessor() : EventProcessor() {
     associatedTypes.insert("RD");
     Rev = Globals::get()->GetPixieRevision();
 }
 
 bool RootDevProcessor::PreProcess(RawEvent &event) {
+    ++RDEVENTS;
     if (!EventProcessor::PreProcess(event))
         return false;
 
@@ -39,6 +45,7 @@ bool RootDevProcessor::Process(RawEvent &event) {
     static const auto &Events = event.GetSummary("RD", true)->GetList();
 
     for (auto it = Events.begin(); it != Events.end(); it++) {
+	++RDHITS;
         RDstruct.energy = (*it)->GetCalibratedEnergy();
         RDstruct.rawEnergy = (*it)->GetEnergy();
         if (Rev == "F") {

@@ -21,6 +21,12 @@
 #include "Messenger.hpp"
 #include "TrapFilterParameters.hpp"
 
+extern unsigned long long DECODEDHITS;
+extern unsigned long long RAWHITS;
+extern unsigned long long RDHITS;
+extern unsigned long long RAWEVTS;
+extern unsigned long long RDEVENTS;
+
 ///! Namespace defining some information for Timing related stuff
 namespace TimingDefs {
     ///Defines an ID for Timing detectors 

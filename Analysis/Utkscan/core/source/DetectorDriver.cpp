@@ -12,6 +12,8 @@
 #include <map>
 #include <sstream>
 
+#include "Globals.hpp"
+
 #include "DammPlotIds.hpp"
 #include "DetectorDriver.hpp"
 #include "DetectorDriverXmlParser.hpp"
@@ -29,6 +31,8 @@ using namespace std;
 using namespace dammIds::raw;
 
 DetectorDriver *DetectorDriver::instance = NULL;
+unsigned long long RAWHITS = 0;
+unsigned long long RAWEVTS = 0;
 
 DetectorDriver *DetectorDriver::get() {
     if (!instance)
@@ -176,15 +180,18 @@ void DetectorDriver::ProcessEvent(RawEvent &rawev) {
     plot(dammIds::raw::D_NUMBER_OF_EVENTS, dammIds::GENERIC_CHANNEL);
     try {
         int innerEvtCounter=0;
+	++RAWEVTS;
         for (vector<ChanEvent *>::const_iterator it = rawev.GetEventList().begin(); it != rawev.GetEventList().end(); ++it) {
             PlotRaw((*it));
             ThreshAndCal((*it), rawev);
             PlotCal((*it));
+	    ++RAWHITS;
 
             string place = (*it)->GetChanID().GetPlaceName();
             if (place == "__9999")
                 continue;
 
+	    //this is very very bad, probably
             if ((*it)->IsSaturated() || (*it)->IsPileup())
                 continue;
 
@@ -192,6 +199,7 @@ void DetectorDriver::ProcessEvent(RawEvent &rawev) {
             double energy = (*it)->GetCalibratedEnergy();
             int location = (*it)->GetChanID().GetLocation();
 
+	    //this may be cause of slow down
             EventData data(time, energy, location);
             TreeCorrelator::get()->place(place)->activate(data);
             if (innerEvtCounter == 0) {

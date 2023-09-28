@@ -9,6 +9,8 @@
 #include <unistd.h>
 #include <sys/times.h>
 
+#include "Globals.hpp"
+
 #include "DammPlotIds.hpp"
 #include "Places.hpp"
 #include "TreeCorrelator.hpp"
@@ -202,7 +204,10 @@ void UtkUnpacker::PrintProcessingTimeInformation(const clock_t &start, const clo
 
     ss << "Data read up to built event number " << eventCounter << " in "
        << (now - start) / hz << " seconds. Current timestamp is "
-       << eventTime;
+       << eventTime 
+       << " D :  " << DECODEDHITS 
+       << " R :  " << RAWHITS
+       << " RD : " << RDHITS;
     m.run_message(ss.str());
 }
 

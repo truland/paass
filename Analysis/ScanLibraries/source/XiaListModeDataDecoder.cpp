@@ -11,11 +11,14 @@
 #include <stdlib.h>
 #include <cmath>
 
+#include "../../Utkscan/core/include/Globals.hpp" 
 #include "HelperEnumerations.hpp"
 #include "XiaListModeDataDecoder.hpp"
 
 using namespace std;
 using namespace DataProcessing;
+
+unsigned long long DECODEDHITS = 0;
 
 vector<XiaData *> XiaListModeDataDecoder::DecodeBuffer(unsigned int *buf, const XiaListModeDataMask &mask) {
 
@@ -218,6 +221,7 @@ vector<XiaData *> XiaListModeDataDecoder::DecodeBuffer(unsigned int *buf, const 
             buf += traceLength / 2;
         }
         events.push_back(data);
+	++DECODEDHITS;
     }// while(buf < bufStart + bufLen)
     return events;
 }

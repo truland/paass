@@ -4,6 +4,7 @@
 #include <cstring>
 
 // Local files
+#include "Globals.hpp"
 #include "DetectorDriver.hpp"
 #include "GetArguments.hpp"
 #include "ScanorInterface.hpp"
@@ -57,6 +58,7 @@ extern "C" void drrsub_(uint32_t &iexist) {
 extern "C" void cleanup_() {
     // Do some cleanup.
     cout << "\nCleaning up..\n";
+    delete unpacker;
     scanner->Close();
     delete scanner;
 }
