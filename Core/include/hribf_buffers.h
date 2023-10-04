@@ -29,6 +29,9 @@
 
 #define ACTUAL_BUFF_SIZE 8194 /// HRIBF .ldf file format
 
+extern unsigned int next_buff_type;
+extern unsigned int next_buff_size;
+
 class Client;
 
 class BufferType {

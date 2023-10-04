@@ -594,6 +594,7 @@ void ScanInterface::RunControl() {
             // Reset the buffer reader to default values.
             databuff.Reset();
 
+	    bool eof_reached = false;
             while (true) {
                 if (kill_all == true) {
                     break;
@@ -612,7 +613,8 @@ void ScanInterface::RunControl() {
                         if (debug_mode) {
                             cout << "debug: Encountered double EOF buffer (end of file).\n";
                         }
-                        break;
+			eof_reached = true;
+                        //break;
                     } else if (databuff.GetRetval() == 3) {
                         if (debug_mode) {
                             cout << "debug: Encountered unknown ldf buffer type.\n";
@@ -631,7 +633,8 @@ void ScanInterface::RunControl() {
                         }
                         break;
                     }
-                    continue;
+		    if( not eof_reached )
+	                    continue;
                 }
 
                 stringstream status;
@@ -660,6 +663,10 @@ void ScanInterface::RunControl() {
                     cout << "debug: Read up to word number " << input_file.tellg() / 4 << " in input file\n";
                 }
                 num_spills_recvd++;
+		if( eof_reached ){
+			eof_reached = false;
+			break;
+		}
             }
 
             if (!dry_run_mode) { delete[] data; }

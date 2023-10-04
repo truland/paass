@@ -46,6 +46,10 @@
 const unsigned int end_spill_size = 20; /// The size of the end of spill "event" (5 words).
 const unsigned int pacman_word1 = 2; /// Words to signify the end of a spill. The scan code searches for these words.
 const unsigned int pacman_word2 = 9999; /// End of spill vsn. The scan code searches for these words.
+					///
+
+unsigned int next_buff_type;
+unsigned int next_buff_size;
 
 ///
 void set_char_array(const std::string &input_, char *arr_,
@@ -628,9 +632,14 @@ bool DATA_buffer::read_next_buffer(std::ifstream *f_, bool force_/*=false*/) {
     // Read the buffer header and length.
     buff_head = curr_buffer[buff_pos++];
     buff_size = curr_buffer[buff_pos++];
+    next_buff_type = next_buffer[0];
+    next_buff_size = next_buffer[1];
 
-    if (!f_->good()) { return false; }
-    else if (f_->eof()) { retval = 2; }
+    if (!f_->good()) { 
+	    return false; 
+    }else if (f_->eof()) { 
+	    retval = 2; 
+    }
 
     return true;
 }

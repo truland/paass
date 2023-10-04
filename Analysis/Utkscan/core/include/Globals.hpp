@@ -26,6 +26,7 @@ extern unsigned long long RAWHITS;
 extern unsigned long long RDHITS;
 extern unsigned long long RAWEVTS;
 extern unsigned long long RDEVENTS;
+extern unsigned long long GOODDECODEDHITS;
 
 ///! Namespace defining some information for Timing related stuff
 namespace TimingDefs {

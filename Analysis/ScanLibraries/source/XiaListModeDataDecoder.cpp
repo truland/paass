@@ -7,6 +7,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <bitset>
+#include <algorithm>
 
 #include <stdlib.h>
 #include <cmath>
@@ -19,6 +20,7 @@ using namespace std;
 using namespace DataProcessing;
 
 unsigned long long DECODEDHITS = 0;
+unsigned long long GOODDECODEDHITS = 0;
 
 vector<XiaData *> XiaListModeDataDecoder::DecodeBuffer(unsigned int *buf, const XiaListModeDataMask &mask) {
 
@@ -46,6 +48,8 @@ vector<XiaData *> XiaListModeDataDecoder::DecodeBuffer(unsigned int *buf, const 
 
 
 
+    vector<double> t1;
+    vector<double> t2;
     while (buf < bufStart + bufLen) {
         XiaData *data = new XiaData();
         bool hasExternalTimestamp = false;
@@ -201,6 +205,8 @@ vector<XiaData *> XiaListModeDataDecoder::DecodeBuffer(unsigned int *buf, const 
         pair<double, double> times = CalculateTimeInSamples(mask, *data);
         data->SetTimeSansCfd(times.first);
         data->SetTime(times.second);
+	t1.push_back(times.first);
+	t2.push_back(times.second);
 
         // One last check to ensure event length matches what we think it
         // should be.
@@ -223,6 +229,12 @@ vector<XiaData *> XiaListModeDataDecoder::DecodeBuffer(unsigned int *buf, const 
         events.push_back(data);
 	++DECODEDHITS;
     }// while(buf < bufStart + bufLen)
+    if( DECODEDHITS<=1537 or DECODEDHITS==7778361 or DECODEDHITS==7776654 ){
+	    std::sort(t1.begin(),t1.end());
+	    std::sort(t2.begin(),t2.end());
+	    std::cout << "t1 front : " << t1.front() << " t1 back : " << t1.back() 
+		      << "\nt2 front : " << t2.front() << " t2 back : " << t2.back() << std::endl;
+    }
     return events;
 }
 
