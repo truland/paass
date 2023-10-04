@@ -22,8 +22,10 @@
 
 using namespace std;
 
+#ifdef DEBUG
 unsigned long long RDHITS = 0;
 unsigned long long RDEVENTS = 0;
+#endif
 
 RootDevProcessor::RootDevProcessor() : EventProcessor() {
     associatedTypes.insert("RD");
@@ -31,7 +33,9 @@ RootDevProcessor::RootDevProcessor() : EventProcessor() {
 }
 
 bool RootDevProcessor::PreProcess(RawEvent &event) {
+    #ifdef DEBUG
     ++RDEVENTS;
+    #endif
     if (!EventProcessor::PreProcess(event))
         return false;
 
@@ -45,7 +49,9 @@ bool RootDevProcessor::Process(RawEvent &event) {
     static const auto &Events = event.GetSummary("RD", true)->GetList();
 
     for (auto it = Events.begin(); it != Events.end(); it++) {
+	#ifdef DEBUG
 	++RDHITS;
+        #endif
         RDstruct.energy = (*it)->GetCalibratedEnergy();
         RDstruct.rawEnergy = (*it)->GetEnergy();
         if (Rev == "F") {

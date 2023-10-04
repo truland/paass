@@ -31,8 +31,10 @@ using namespace std;
 using namespace dammIds::raw;
 
 DetectorDriver *DetectorDriver::instance = NULL;
+#ifdef DEBUG
 unsigned long long RAWHITS = 0;
 unsigned long long RAWEVTS = 0;
+#endif
 
 DetectorDriver *DetectorDriver::get() {
     if (!instance)
@@ -180,12 +182,16 @@ void DetectorDriver::ProcessEvent(RawEvent &rawev) {
     plot(dammIds::raw::D_NUMBER_OF_EVENTS, dammIds::GENERIC_CHANNEL);
     try {
         int innerEvtCounter=0;
+        #ifdef DEBUG
 	++RAWEVTS;
+        #endif
         for (vector<ChanEvent *>::const_iterator it = rawev.GetEventList().begin(); it != rawev.GetEventList().end(); ++it) {
             PlotRaw((*it));
             ThreshAndCal((*it), rawev);
             PlotCal((*it));
+	    #ifdef DEBUG
 	    ++RAWHITS;
+	    #endif
 
             string place = (*it)->GetChanID().GetPlaceName();
             if (place == "__9999")

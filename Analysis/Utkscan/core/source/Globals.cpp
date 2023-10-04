@@ -22,9 +22,6 @@ Globals *Globals::instance_ = NULL;
 Globals *Globals::get() {
     if (!instance_){
         instance_ = new Globals("Config.xml");
-	DECODEDHITS = 0;
-	RAWHITS = 0;
-	RDHITS = 0;
     }
     return (instance_);
 }
@@ -33,9 +30,6 @@ Globals *Globals::get() {
 Globals *Globals::get(const std::string &file) {
     if (!instance_){
         instance_ = new Globals(file);
-	DECODEDHITS = 0;
-	RAWHITS = 0;
-	RDHITS = 0;
     }
     return (instance_);
 }

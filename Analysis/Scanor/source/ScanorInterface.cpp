@@ -8,7 +8,9 @@
 
 #include <cstring>
 
+#ifdef DEBUG
 #include "../../Utkscan/core/include/Globals.hpp"
+#endif
 
 #include "ScanorInterface.hpp"
 
@@ -16,7 +18,9 @@
 #define EXTERNAL_FIFO_LENGTH 131072
 #define U_DELIMITER 0xFFFFFFFF
 
+#ifdef DEBUG
 unsigned long long CURRWORDS = 0;
+#endif
 
 //Actually define the instance of the ScanorInterface
 ScanorInterface *ScanorInterface::instance_ = NULL;
@@ -124,7 +128,9 @@ void ScanorInterface::Hissub(unsigned short **sbuf, unsigned short *nhw) {
     /* Initialize variables */
     unsigned long totWords = 0;
     uint32_t nWords = buf[0] / 4;
+    #ifdef DEBUG
     CURRWORDS = nWords;
+    #endif
     uint32_t totBuf = buf[1];
     uint32_t bufNum = buf[2];
     static unsigned int lastBuf = U_DELIMITER;
@@ -147,7 +153,9 @@ void ScanorInterface::Hissub(unsigned short **sbuf, unsigned short *nhw) {
                 return;
             }
             nWords = buf[totWords] / 4;
+	    #ifdef DEBUG
 	    CURRWORDS = nWords;
+	    #endif
             totBuf = buf[totWords + 1];
             bufNum = buf[totWords + 2];
             totWords += nWords + 1;
@@ -165,9 +173,11 @@ void ScanorInterface::Hissub(unsigned short **sbuf, unsigned short *nhw) {
             if (buf[totWords] == U_DELIMITER) return;
 
             nWords = buf[totWords] / 4;
+	    #ifdef DEBUG
 	    CURRWORDS = nWords;
+	    #endif
 	    if( buf[totWords] <= 12 ){
-	    	std::cout << "HERE DUMBASS" << std::endl;
+	    	std::cout << "#####WARNING : FOUND AN INCOMPLETE CHUNK#####" << std::endl;
 	    }
             bufNum = buf[totWords + 2];
             // read total number of buffers later after we check if the last spill was good
