@@ -8,11 +8,15 @@
 
 #include <cstring>
 
+#include "../../Utkscan/core/include/Globals.hpp"
+
 #include "ScanorInterface.hpp"
 
 #define TOTALREAD 1000000
 #define EXTERNAL_FIFO_LENGTH 131072
 #define U_DELIMITER 0xFFFFFFFF
+
+unsigned long long CURRWORDS = 0;
 
 //Actually define the instance of the ScanorInterface
 ScanorInterface *ScanorInterface::instance_ = NULL;
@@ -120,6 +124,7 @@ void ScanorInterface::Hissub(unsigned short **sbuf, unsigned short *nhw) {
     /* Initialize variables */
     unsigned long totWords = 0;
     uint32_t nWords = buf[0] / 4;
+    CURRWORDS = nWords;
     uint32_t totBuf = buf[1];
     uint32_t bufNum = buf[2];
     static unsigned int lastBuf = U_DELIMITER;
@@ -142,6 +147,7 @@ void ScanorInterface::Hissub(unsigned short **sbuf, unsigned short *nhw) {
                 return;
             }
             nWords = buf[totWords] / 4;
+	    CURRWORDS = nWords;
             totBuf = buf[totWords + 1];
             bufNum = buf[totWords + 2];
             totWords += nWords + 1;
@@ -159,6 +165,10 @@ void ScanorInterface::Hissub(unsigned short **sbuf, unsigned short *nhw) {
             if (buf[totWords] == U_DELIMITER) return;
 
             nWords = buf[totWords] / 4;
+	    CURRWORDS = nWords;
+	    if( buf[totWords] <= 12 ){
+	    	std::cout << "HERE DUMBASS" << std::endl;
+	    }
             bufNum = buf[totWords + 2];
             // read total number of buffers later after we check if the last spill was good
             if (lastBuf != U_DELIMITER && bufNum != lastBuf + 1) {

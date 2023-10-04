@@ -36,7 +36,6 @@
 #include "GammaScintProcessor.hpp"
 #include "GeProcessor.hpp"
 #include "Hen3Processor.hpp"
-#include "ImplantSsdProcessor.hpp"
 #include "IonChamberProcessor.hpp"
 #include "LiquidScintProcessor.hpp"
 #include "LitePositionProcessor.hpp"
@@ -232,8 +231,6 @@ vector<EventProcessor *> DetectorDriverXmlParser::ParseProcessors(const pugi::xm
             vecProcess.push_back(new GeProcessor());
         } else if (name == "Hen3Processor") {
             vecProcess.push_back(new Hen3Processor());
-        } else if (name == "ImplantSsdProcessor") {
-            vecProcess.push_back(new ImplantSsdProcessor());
         } else if (name == "IonChamberProcessor") {
             vecProcess.push_back(new IonChamberProcessor());
         } else if (name == "LiquidScintProcessor") {
