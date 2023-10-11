@@ -26,7 +26,7 @@ class MMTASProcessor : public EventProcessor {
 		~MMTASProcessor() {
 			std::cout << "---Deleted MMTASProcessor---" << std::endl;
 			outputfile = outputtree->GetCurrentFile();
-			outputfile->Write();
+			outputfile->Write(0,2,0);
 			outputfile->Close();
 		}
 
