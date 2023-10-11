@@ -10,6 +10,8 @@
 
 #include "pugixml.hpp"
 
+
+
 ///A class that handles interfacing with an XML file. At the moment I'm going
 /// to make this a singleton since it will be easier implementation. I also
 /// cannot think of a program at the moment that will need more than one XML
@@ -25,6 +27,8 @@ public:
     ///@return A constant pointer to the document that was opened up
     const pugi::xml_document *GetDocument() const { return &xmlDocument_; }
 
+    std::string GetXMLDocString() const { return xmldocstring; }
+
     ///Default destructor that deletes the instance when its called.
     ~XmlInterface();
 
@@ -36,8 +40,24 @@ private:
     XmlInterface(XmlInterface const &);//!< Overload of the constructor
     void operator=(XmlInterface const &); //!< copy constructor
     static XmlInterface *instance_; //!< Create the static instance of the class
+    
+    struct xml_string_writer: pugi::xml_writer{
+	    std::string result;
+
+	    virtual void write(const void* data, size_t size){
+		    result.append(static_cast<const char*>(data), size);
+	    }
+    };
+
+    std::string node_to_string(pugi::xml_node node){
+	    xml_string_writer writer;
+	    node.print(writer);
+
+	    return writer.result;
+    }
 
     pugi::xml_document xmlDocument_;
+    std::string xmldocstring;
 };
 
 #endif //PIXIESUITE_XMLINTERFACE_HPP

@@ -13,6 +13,7 @@
 #include <sstream>
 
 #include "Globals.hpp"
+#include "XmlInterface.hpp"
 
 #include "DammPlotIds.hpp"
 #include "DetectorDriver.hpp"
@@ -88,27 +89,37 @@ DetectorDriver::DetectorDriver() : histo(OFFSET, RANGE, "DetectorDriver") {
         Long64_t rFileSizeB_ = rFileSizeGB_ * pow(1000,3);
         std::string name = Globals::get()->GetOutputPath() + Globals::get()->GetOutputFileName() + "_DD.root";
         PixieFile = new TFile(name.c_str(), "RECREATE");
-        PTree = new TTree("PixTree", "Pixie Event Tree");
-        PTree->SetMaxTreeSize(rFileSizeB_);
-
         // ROOTFILE system wide header
         //get the current systemTime and make it a string
         time_t now = time(nullptr);
         std::string date = ctime(&now);
 
-        TNamed cfgTNamed("config", Globals::get()->GetConfigFileName());
+	TTree* configInfo = new TTree("ConfigInfo","Config info");
+	auto configfilename = Globals::get()->GetConfigFileName();
+	auto configfiledata = XmlInterface::get()->GetXMLDocString();
+	configInfo->Branch("filename",&configfilename);
+	configInfo->Branch("data",&configfiledata);
+	configInfo->Fill();
+	configInfo->Write(0,2,0);
+
+        //TNamed cfgTNamed("config", Globals::get()->GetConfigFileName());
         TNamed outfTNamed("outputFile", Globals::get()->GetOutputFileName());
         TNamed createTnamed("createTime", date);
         TNamed rootVersionTnamed("RootVersion", gROOT->GetVersion());
         TNamed rootSysTnamed("RootSys", gROOT->GetRootSys().Data());
         TNamed outRootTNamed("outputRootFile", name);
+	//TNamed xmlconfigfile("config_string",XmlInterface::get()->GetXMLDocString());
 
-        cfgTNamed.Write();
+        //cfgTNamed.Write();
         outfTNamed.Write();
         createTnamed.Write();
         rootVersionTnamed.Write();
         rootSysTnamed.Write();
         outRootTNamed.Write();
+	//xmlconfigfile.Write();
+
+        PTree = new TTree("PixTree", "Pixie Event Tree");
+        PTree->SetMaxTreeSize(rFileSizeB_);
 
         // new Branch for PixTreeEvent
         PTree->Branch("PixTreeEvent",&pixie_tree_event_);

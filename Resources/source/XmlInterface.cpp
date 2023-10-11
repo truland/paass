@@ -23,6 +23,8 @@ XmlInterface::XmlInterface(const std::string &file) {
         throw std::invalid_argument(ss.str());
     }
 
+    xmldocstring = node_to_string(xmlDocument_);
+
     std::cout << "XmlInterface - Successfully loaded \"" << file
               << "\" into memory." << std::endl;
 }
