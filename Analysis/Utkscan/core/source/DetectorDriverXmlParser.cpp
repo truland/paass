@@ -36,6 +36,7 @@
 #include "GammaScintProcessor.hpp"
 #include "GeProcessor.hpp"
 #include "Hen3Processor.hpp"
+#include "ImplantSsdProcessor.hpp"
 #include "IonChamberProcessor.hpp"
 #include "LiquidScintProcessor.hpp"
 #include "LitePositionProcessor.hpp"
@@ -43,6 +44,7 @@
 #include "McpProcessor.hpp"
 #include "MtasProcessor.hpp"
 #include "MMTASProcessor.hpp"
+#include "MtasImplantSipmProcessor.hpp"
 #include "NeutronScintProcessor.hpp"
 #include "PidProcessor.hpp"
 #include "PositionProcessor.hpp"
@@ -135,14 +137,14 @@ vector<EventProcessor *> DetectorDriverXmlParser::ParseProcessors(const pugi::xm
 			backslope = backposcorrection.attribute("slope").as_double(0.0);
 		}
 		vecProcess.push_back(new BSMProcessor(
-			processor.attribute("num_segments").as_int(1),
-			processor.attribute("stand_alone").as_bool(false),
-			MTASGates,
-			processor.attribute("thresh").as_double(0.0),
-			frontconstant, frontslope, frontmeanerg,
-			backconstant, backslope, backmeanerg 
-		));	
-        } else if (name == "CloverCalibProcessor") {
+					processor.attribute("num_segments").as_int(1),
+					processor.attribute("stand_alone").as_bool(false),
+					MTASGates,
+					processor.attribute("thresh").as_double(0.0),
+					frontconstant, frontslope, frontmeanerg,
+					backconstant, backslope, backmeanerg
+					));
+	} else if (name == "CloverCalibProcessor") {
             vecProcess.push_back(new CloverCalibProcessor(
                 processor.attribute("gamma_threshold").as_double(1),
                 processor.attribute("low_ratio").as_double(1),
@@ -231,6 +233,8 @@ vector<EventProcessor *> DetectorDriverXmlParser::ParseProcessors(const pugi::xm
             vecProcess.push_back(new GeProcessor());
         } else if (name == "Hen3Processor") {
             vecProcess.push_back(new Hen3Processor());
+        } else if (name == "ImplantSsdProcessor") {
+            vecProcess.push_back(new ImplantSsdProcessor());
         } else if (name == "IonChamberProcessor") {
             vecProcess.push_back(new IonChamberProcessor());
         } else if (name == "LiquidScintProcessor") {
@@ -243,6 +247,26 @@ vector<EventProcessor *> DetectorDriverXmlParser::ParseProcessors(const pugi::xm
                 processor.attribute("double_start").as_bool(false)));
         } else if (name == "McpProcessor") {
             vecProcess.push_back(new McpProcessor());
+	} else if (name == "MMTASProcessor") {
+		vecProcess.push_back(new MMTASProcessor());
+	} else if (name == "MtasProcessor") {
+		vecProcess.push_back(new MtasProcessor(
+					processor.attribute("new_center").as_bool(false),
+					processor.attribute("zero_suppress").as_bool(false),
+					processor.attribute("beta_threshold").as_double(1.0),
+					processor.attribute("num_center").as_int(12)
+					));
+        } else if (name == "MtasImplantSipmProcessor"){
+            vecProcess.push_back(new MtasImplantSipmProcessor(
+                processor.attribute("yso_scale").as_double(100.0),
+                processor.attribute("yso_offset").as_uint(1400.0),
+                processor.attribute("yso_threshold").as_double(50.0),
+                processor.attribute("oqdc_yso_threshold").as_double(1400.0),
+                processor.attribute("dyh_thresh").as_double(50.0),
+                processor.attribute("dyh_qdc_thresh").as_double(50.0),
+                processor.attribute("dyl_thresh").as_double(50.0),
+                processor.attribute("dyl_qdc_thresh").as_double(50.0),
+                processor.attribute("dyh_upper_thresh").as_double(50.0)));
         } else if (name == "NeutronScintProcessor") {
             vecProcess.push_back(new NeutronScintProcessor());
         } else if (name == "PositionProcessor") {
@@ -250,7 +274,8 @@ vector<EventProcessor *> DetectorDriverXmlParser::ParseProcessors(const pugi::xm
         } else if (name == "PidProcessor") {
             vecProcess.push_back(new PidProcessor(
                 processor.attribute("yso_thresh").as_double(10.0),
-                processor.attribute("fit_thresh").as_double(10.0)));
+                processor.attribute("fit_thresh").as_double(10.0),
+                processor.attribute("rit_thresh").as_double(10.0)));
         } else if (name == "PspmtProcessor") {
             vecProcess.push_back(new PspmtProcessor(
                 processor.attribute("vd").as_string("SIB062_0926"),
@@ -259,22 +284,15 @@ vector<EventProcessor *> DetectorDriverXmlParser::ParseProcessors(const pugi::xm
                 processor.attribute("yso_threshold").as_double(50.0),
                 processor.attribute("front_scale").as_double(500.0),
                 processor.attribute("front_offset").as_uint(500.0),
-                processor.attribute("front_threshold").as_double(50.0),
-                processor.attribute("rotation").as_double(0.0)));
-        } else if (name == "SingleBetaProcessor") {
-            vecProcess.push_back(new SingleBetaProcessor());
-        } else if (name == "RootDevProcessor") {
-            vecProcess.push_back(new RootDevProcessor());
-        } else if (name == "MMTASProcessor") {
-            vecProcess.push_back(new MMTASProcessor());
-        } else if (name == "MtasProcessor") {
-            vecProcess.push_back(new MtasProcessor(
-		processor.attribute("new_center").as_bool(false),
-		processor.attribute("zero_suppress").as_bool(false),
-		processor.attribute("beta_threshold").as_double(1.0),
-		processor.attribute("num_center").as_int(12)
-	    ));
-        } else if (name == "TeenyVandleProcessor") {
+                processor.attribute("pin_threshold").as_double(500.0),
+                processor.attribute("pin_overflow").as_double(700.0),
+                processor.attribute("rotation").as_double(0.0),
+                processor.attribute("xflip").as_bool(false)));
+	} else if (name == "SingleBetaProcessor") {
+		vecProcess.push_back(new SingleBetaProcessor());
+	} else if (name == "RootDevProcessor") {
+		vecProcess.push_back(new RootDevProcessor(processor.attribute("included_types").as_string("")));
+	} else if (name == "TeenyVandleProcessor") {
             vecProcess.push_back(new TeenyVandleProcessor());
         } else if (name == "TemplateProcessor") {
             vecProcess.push_back(new TemplateProcessor());

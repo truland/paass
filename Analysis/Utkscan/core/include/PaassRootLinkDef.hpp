@@ -28,6 +28,12 @@
 #pragma link C++ struct processor_struct::MTAS+;
 #pragma link C++ class std::vector<processor_struct::MTAS>+;
 
+#pragma link C++ struct processor_struct::MTASIMPLANT+;
+#pragma link C++ class std::vector<processor_struct::MTASIMPLANT>+;
+
+#pragma link C++ struct processor_struct::MTASTOTALS+;
+#pragma link C++ class std::vector<processor_struct::MTASTOTALS>+;
+
 #pragma link C++ struct processor_struct::NEXT+;
 #pragma link C++ class std::vector<processor_struct::NEXT>+;
 

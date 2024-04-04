@@ -10,11 +10,11 @@
 namespace processor_struct {
 
 struct BATO {
-    std::vector<double> pQDCsums = {};
     double time = -999;
     double energy = -999;
     double qdc = -999;
     int detNum = -999;
+    std::vector<double> pQDCsums = {};
 };
 static const BATO BATO_DEFAULT_STRUCT;
 
@@ -99,6 +99,28 @@ struct MTAS {
 };
 static const MTAS MTAS_DEFAULT_STRUCT;
 
+struct MTASIMPLANT {
+    double energy = -999;
+    double oqdc = -999;
+    double tqdc = -999;
+    double timesans = -999;
+    int sipmloc = -999;
+    int xpixel = -999;
+    int ypixel = -999;
+    TString subtype = "";
+    TString group ="";
+};
+static const MTASIMPLANT MTASIMPLANT_DEFAULT_STRUCT;
+
+struct MTASTOTALS {
+	double Total = -999;
+	double Center = -999;
+	double Inner = -999;
+	double Middle = -999;
+	double Outer = -999;
+};
+static const MTASTOTALS MTASTOTALS_DEFAULT_STRUCT;
+
 
 struct NEXT {
     /* Data container for NEXT */
@@ -121,18 +143,74 @@ struct NEXT {
 };
 static const NEXT NEXT_DEFAULT_STRUCT;
 
+//PID class for E19044
+//struct PID {
+//    double rfq_time = -999;
+//    double fp_time = -999;
+//    double pinCfd_time = -999;
+//    double pin_0_time = -999;
+//    double pin_1_time = -999;
+//    double pin_0_energy = -999;
+//    double pin_1_energy = -999;
+//    double tac_0 = -999;
+//    double tac_1 = -999;
+//    double tof0 = -999;
+//    double tof1 = -999;
+//};
+//new PID class for FDSi
+
 struct PID {
-    double rfq_time = -999;
-    double fp_time = -999;
-    double pinCfd_time = -999;
-    double pin_0_time = -999;
-    double pin_1_time = -999;
-    double pin_0_energy = -999;
-    double pin_1_energy = -999;
-    double tac_0 = -999;
-    double tac_1 = -999;
-    double tof0 = -999;
-    double tof1 = -999;
+    double cross_scint_b1_energy = -999;
+    double cross_scint_b1_time = -999;
+    double cross_scint_t1_energy = -999;
+    double cross_scint_t1_time = -999;
+    double cross_scint_v1_energy = -999;
+    double cross_scint_v1_time = -999;
+    double cross_scint_v2_energy = -999;
+    double cross_scint_v2_time = -999;
+    double cross_scint_v3_energy = -999;
+    double cross_scint_v3_time = -999;
+    double cross_scint_v4_energy = -999;
+    double cross_scint_v4_time = -999;
+    double cross_pin_0_energy = -999;
+    double cross_pin_0_tracemax = -999;
+    double cross_pin_0_traceqdc = -999;
+    double cross_pin_0_time = -999;
+    double cross_pin_1_energy = -999;
+    double cross_pin_1_tracemax = -999;
+    double cross_pin_1_traceqdc = -999;
+    double cross_pin_1_time = -999;
+    double cross_pin_2_energy = -999;
+    double cross_pin_2_tracemax = -999;
+    double cross_pin_2_traceqdc = -999;
+    double cross_pin_2_time = -999;
+    double cross_pin_3_energy = -999;
+    double cross_pin_3_tracemax = -999;
+    double cross_pin_3_traceqdc = -999;
+    double cross_pin_3_time = -999;
+    double tac_0 = -999; //image scintL - Cross MSX40
+    double tac_1 = -999; //image scintL - Cross scint
+    double tac_2 = -999; //dispersive L - R
+    double tac_3 = -999; //dispersive U - D
+    double disp_L_logic_time = -999;
+    double disp_R_logic_time = -999;
+    double disp_U_logic_time = -999;
+    double disp_D_logic_time = -999;
+    double cross_pin_0_logic_time = -999;
+    double cross_scint_b2_logic_time = -999;
+    double image_scint_L_logic_time = -999;
+    double tof0 = -999; //tof between image scint L and cross pin0 onboard cfd
+    double tof1 = -999; //tof between image scint L and cross pin0 highrestime
+    double tof2 = -999; //tof between image scint L and cross scint onboard cfd
+    double tof3 = -999; //tof between image scint L and cross scint highrestime
+    double tof4 = -999; //tof between image scint L and cross2 pin2 highrestime
+    double tof5 = -999; //tof between image scint L and cross2 scint highrestime
+    double disp_LR = -999; //time difference between dispersive left and right
+    double disp_UD = -999; //time difference between dispersive up and down
+    double fit_energy = -999;
+    double yso_energy = -999;
+    double rit_energy = -999;
+    TString stop_in = "";
 };
 static const PID PID_DEFAULT_STRUCT;
 
@@ -159,10 +237,13 @@ struct ROOTDEV {
     double cfdFraction = -999;
     int cfdSourceBit = -999;
     int detNum = -999;   //the instance number of RD in the xml Map
+    int crateNum = -999;   // the physical crate number (forced to 0 for now in Unpacker. TTK jan23,2024)
     int modNum = -999;   // the physical module number
     int chanNum = -999;  // the physical channel number
+    TString type = "";
     TString subtype = "";
     TString group = "";
+    std::vector<std::string> tag = {};
     bool pileup = false;                   //Did pixie detect pileup in the event
     bool saturation = false;               //Did the trace go out of the ADC range
     std::vector<unsigned int> trace = {};  //The trace if present
@@ -221,6 +302,7 @@ class PixTreeEvent : public TObject {
     PixTreeEvent(const PixTreeEvent &obj) : TObject(obj) {
         externalTS1 = obj.externalTS1;
         externalTS2 = obj.externalTS2;
+        internalTS = obj.internalTS;
         eventNum = obj.eventNum;
         fileName = obj.fileName;
         bato_vec_ = obj.bato_vec_;
@@ -230,12 +312,15 @@ class PixTreeEvent : public TObject {
         gammascint_vec_ = obj.gammascint_vec_;
         logic_vec_ = obj.logic_vec_;
         mtas_vec_ = obj.mtas_vec_;
+        mtasimpl_vec_ = obj.mtasimpl_vec_;
+        mtastotals_vec_ = obj.mtastotals_vec_;
         next_vec_ = obj.next_vec_;
         pid_vec_ = obj.pid_vec_;
         pspmt_vec_ = obj.pspmt_vec_;
         rootdev_vec_ = obj.rootdev_vec_;
         singlebeta_vec_ = obj.singlebeta_vec_;
         vandle_vec_ = obj.vandle_vec_;
+	
     }
 
     virtual ~PixTreeEvent() {}
@@ -244,6 +329,7 @@ class PixTreeEvent : public TObject {
     virtual void Reset() {
         externalTS1 = 0;
         externalTS2 = 0;
+        internalTS = 0;
         eventNum = 0;
         fileName = "";
         bato_vec_.clear();
@@ -252,18 +338,22 @@ class PixTreeEvent : public TObject {
         doublebeta_vec_.clear();
         gammascint_vec_.clear();
         logic_vec_.clear();
-	mtas_vec_.clear();
+        mtas_vec_.clear();
+        mtasimpl_vec_.clear();
+        mtastotals_vec_.clear();
         next_vec_.clear();
         pid_vec_.clear();
         pspmt_vec_.clear();
         rootdev_vec_.clear();
         singlebeta_vec_.clear();
         vandle_vec_.clear();
+
     }
 
     /* data structures to be filled in the ROOT TTree */
     ULong64_t externalTS1 = 0;
     ULong64_t externalTS2 = 0;
+    ULong64_t internalTS = 0;
     Double_t eventNum = 0;
     std::string fileName = "";
     std::vector<processor_struct::BATO> bato_vec_;
@@ -273,6 +363,8 @@ class PixTreeEvent : public TObject {
     std::vector<processor_struct::GAMMASCINT> gammascint_vec_;
     std::vector<processor_struct::LOGIC> logic_vec_;
     std::vector<processor_struct::MTAS> mtas_vec_;
+    std::vector<processor_struct::MTASIMPLANT> mtasimpl_vec_;
+    std::vector<processor_struct::MTASTOTALS> mtastotals_vec_;
     std::vector<processor_struct::NEXT> next_vec_;
     std::vector<processor_struct::PID> pid_vec_;
     std::vector<processor_struct::PSPMT> pspmt_vec_;

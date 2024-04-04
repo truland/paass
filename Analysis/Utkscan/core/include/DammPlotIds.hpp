@@ -49,6 +49,8 @@ namespace dammIds {
         const int DD_TRACE_MAX = 1814;//!< Plot for Max Value in Trace
         const int D_HAS_TRACE_2 = 1815;//!< Plot for Channels w/ valid waveform analysis 
         const int D_HAS_TRACE_3 = 1816;//!< Plot for Channels w/ valid fit analysis 
+        //const int DD_TRACE_MAX_PINGATE = 1817;//!< Plot for Max Value in Trace gated by PIN0 energy
+	const int DD_CHAN_MULT_DIST = 1818;
     }
 
     /// in PspmtProcessor.cpp
@@ -154,7 +156,7 @@ namespace dammIds {
     //in PidProcessor.cpp
     namespace pid {
         const int OFFSET = 3500; //!< Offset for the PidProcessor Hists
-        const int RANGE = 50;//!< Range for the PidProcessor Hists
+        const int RANGE = 100;//!< Range for the PidProcessor Hists
     }
 
     //in BatoProcessor.cpp
@@ -210,17 +212,19 @@ namespace dammIds {
         const int OFFSET = 7100;//!< Offset for Dssd4SheProcessor
         const int RANGE = 100;//!< Range for Dssd4SheProcessor
     }
+    namespace mtasimplant {
+        const int OFFSET = 7000; //! Offset for MTAS Implant processors (both dssd and sipm based)
+        const int RANGE = 200; //! Range for MTAS Implant processors (both dssd and sipm based)
+    }
 
     namespace bsm {
-    	const int OFFSET = 6500;
-	const int RANGE = 500;
+       const int OFFSET = 6500;
+       const int RANGE = 500;
     }
-
-    namespace mtas {
+    namespace mtas { 
         const int OFFSET = 7200; //!< Offset for MTASProcessor
-        const int RANGE = 800; //!< Range for MTASProcessor
+        const int RANGE = 800; //!< Range for MTASProcessor 
     }
-
 
     /// Definitions for all of the traces
     namespace analyzers {
