@@ -589,7 +589,8 @@ void ScanInterface::RunControl() {
             bool bad_spill;
             unsigned int nBytes;
 
-            if (!dry_run_mode) { data = new unsigned int[250000]; }
+	    const unsigned dataSize = 2500000;
+            if (!dry_run_mode) { data = new unsigned int[dataSize]; }
 
             // Reset the buffer reader to default values.
             databuff.Reset();

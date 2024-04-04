@@ -89,37 +89,37 @@ DetectorDriver::DetectorDriver() : histo(OFFSET, RANGE, "DetectorDriver") {
         Long64_t rFileSizeB_ = rFileSizeGB_ * pow(1000,3);
         std::string name = Globals::get()->GetOutputPath() + Globals::get()->GetOutputFileName() + "_DD.root";
         PixieFile = new TFile(name.c_str(), "RECREATE");
+        PTree = new TTree("PixTree", "Pixie Event Tree");
+        PTree->SetMaxTreeSize(rFileSizeB_);
+
         // ROOTFILE system wide header
         //get the current systemTime and make it a string
         time_t now = time(nullptr);
         std::string date = ctime(&now);
 
 	TTree* configInfo = new TTree("ConfigInfo","Config info");
-	auto configfilename = Globals::get()->GetConfigFileName();
-	auto configfiledata = XmlInterface::get()->GetXMLDocString();
-	configInfo->Branch("filename",&configfilename);
-	configInfo->Branch("data",&configfiledata);
-	configInfo->Fill();
-	configInfo->Write(0,2,0);
+       auto configfilename = Globals::get()->GetConfigFileName();
+       auto configfiledata = XmlInterface::get()->GetXMLDocString();
+       configInfo->Branch("filename",&configfilename);
+       configInfo->Branch("data",&configfiledata);
+       configInfo->Fill();
+       configInfo->Write(0,2,0);
 
-        //TNamed cfgTNamed("config", Globals::get()->GetConfigFileName());
+        TNamed xmlconfigfile("config_string",XmlInterface::get()->GetXMLDocString());
+        TNamed cfgTNamed("config", Globals::get()->GetConfigFileName());
         TNamed outfTNamed("outputFile", Globals::get()->GetOutputFileName());
         TNamed createTnamed("createTime", date);
         TNamed rootVersionTnamed("RootVersion", gROOT->GetVersion());
         TNamed rootSysTnamed("RootSys", gROOT->GetRootSys().Data());
         TNamed outRootTNamed("outputRootFile", name);
-	//TNamed xmlconfigfile("config_string",XmlInterface::get()->GetXMLDocString());
 
-        //cfgTNamed.Write();
+        cfgTNamed.Write();
         outfTNamed.Write();
         createTnamed.Write();
         rootVersionTnamed.Write();
         rootSysTnamed.Write();
         outRootTNamed.Write();
-	//xmlconfigfile.Write();
-
-        PTree = new TTree("PixTree", "Pixie Event Tree");
-        PTree->SetMaxTreeSize(rFileSizeB_);
+	xmlconfigfile.Write();
 
         // new Branch for PixTreeEvent
         PTree->Branch("PixTreeEvent",&pixie_tree_event_);
@@ -149,7 +149,7 @@ DetectorDriver::DetectorDriver() : histo(OFFSET, RANGE, "DetectorDriver") {
             }
         }
 
-        PTree->SetAutoFlush(3000);
+        // PTree->SetAutoFlush(3000);
         //ending root stuff
     }
 }
@@ -186,7 +186,11 @@ void DetectorDriver::Init(RawEvent &rawev) {
 }
 
 void DetectorDriver::ProcessEvent(RawEvent &rawev) {
-
+    // Segmentation violation issue workaround 
+    // rawev.Size() can be zero. This happens when only one channel is fired in an event and that channel is defined as "ignore"
+    if (rawev.Size() == 0) {
+	return;
+    }
     if (sysrootbool_) {
 	pixie_tree_event_.Reset();
     }
@@ -194,21 +198,28 @@ void DetectorDriver::ProcessEvent(RawEvent &rawev) {
     try {
         int innerEvtCounter=0;
         #ifdef DEBUG
-	++RAWEVTS;
+        ++RAWEVTS;
         #endif
+	int eventLength = rawev.GetEventList().size();
         for (vector<ChanEvent *>::const_iterator it = rawev.GetEventList().begin(); it != rawev.GetEventList().end(); ++it) {
             PlotRaw((*it));
             ThreshAndCal((*it), rawev);
             PlotCal((*it));
-	    #ifdef DEBUG
-	    ++RAWHITS;
-	    #endif
+            #ifdef DEBUG
+            ++RAWHITS;
+            #endif
+	    //This is wrong for pixie32s
+	    //and assume only 1 crate for now
+	    plot(dammIds::raw::DD_CHAN_MULT_DIST,(*it)->GetChannelNumber()+(*it)->GetModuleNumber()*16,eventLength);
 
+            //internal TS for the FDSi experiment (Xu)
+            if ((*it)->GetChanID().HasTag("its")) {
+                pixie_tree_event_.internalTS = (*it)->GetTimeSansCfd() * Globals::get()->GetClockInSeconds((*it)->GetChanID().GetModFreq()) * 1e9;
+            }
             string place = (*it)->GetChanID().GetPlaceName();
             if (place == "__9999")
                 continue;
 
-	    //this is very very bad, probably
             if ((*it)->IsSaturated() || (*it)->IsPileup())
                 continue;
 
@@ -216,7 +227,6 @@ void DetectorDriver::ProcessEvent(RawEvent &rawev) {
             double energy = (*it)->GetCalibratedEnergy();
             int location = (*it)->GetChanID().GetLocation();
 
-	    //this may be cause of slow down
             EventData data(time, energy, location);
             TreeCorrelator::get()->place(place)->activate(data);
             if (innerEvtCounter == 0) {
@@ -295,6 +305,7 @@ void DetectorDriver::DeclarePlots() {
         DeclareHistogram1D(D_EVENT_GAP, SE, "Time Between Events in ns");
         DeclareHistogram1D(D_EVENT_MULTIPLICITY, S7, "Number of Channels Event");
         DeclareHistogram1D(D_BUFFER_END_TIME, SE, "Buffer Length in ns");
+	DeclareHistogram2D(DD_CHAN_MULT_DIST,S8,SA,"Channel Distribution vs Event Length");
 
         if (Globals::get()->HasRawHistogramsDefined()) {
             DetectorLibrary *modChan = DetectorLibrary::get();
@@ -336,12 +347,12 @@ void DetectorDriver::DeclarePlots() {
 }
 
 int DetectorDriver::ThreshAndCal(ChanEvent *chan, RawEvent &rawev) {
-    ChannelConfiguration chanCfg = chan->GetChanID();
+    const ChannelConfiguration* chanCfg = &(chan->GetChanID());
     int id = chan->GetID();
-    string type = chanCfg.GetType();
-    string subtype = chanCfg.GetSubtype();
-    set<string> tags = chanCfg.GetTags();
-    bool hasStartTag = chanCfg.HasTag("start");
+    string type = chanCfg->GetType();
+    string subtype = chanCfg->GetSubtype();
+    set<string> tags = chanCfg->GetTags();
+    bool hasStartTag = chanCfg->HasTag("start");
     Trace &trace = chan->GetTrace();
 
     RandomInterface *randoms = RandomInterface::get();
@@ -355,12 +366,14 @@ int DetectorDriver::ThreshAndCal(ChanEvent *chan, RawEvent &rawev) {
         plot(D_HAS_TRACE, id);
         
         //!Setting these to false initally so that we can guarante that its false either if we are ignored or if it fails in the analyzers. 
-        chan->GetTrace().SetHasValidWaveformAnalysis(false);
-        chan->GetTrace().SetHasValidTimingAnalysis(false);
+        //chan->GetTrace().SetHasValidWaveformAnalysis(false);
+        //chan->GetTrace().SetHasValidTimingAnalysis(false);
+        trace.SetHasValidWaveformAnalysis(false);
+        trace.SetHasValidTimingAnalysis(false);
 
         for (vector<TraceAnalyzer *>::iterator it = vecAnalyzer.begin(); it != vecAnalyzer.end(); it++){
-            if (!(*it)->IsIgnoredDetector(chanCfg)){
-                (*it)->Analyze(trace, chanCfg);
+            if (!(*it)->IsIgnoredDetector(*chanCfg)){
+                (*it)->Analyze(trace, *chanCfg);
             }
         }
 
@@ -398,13 +411,13 @@ int DetectorDriver::ThreshAndCal(ChanEvent *chan, RawEvent &rawev) {
     double time, walk_correction;
     if (chan->GetHighResTimeInNs() == 0.0) {
         time = chan->GetTime(); //time is in clock ticks
-        walk_correction = walk_->GetCorrection(chanCfg, energy);
+        walk_correction = walk_->GetCorrection(*chanCfg, energy);
     } else {
         time = chan->GetHighResTimeInNs(); //time here is in ns
-        walk_correction = walk_->GetCorrection(chanCfg, trace.GetQdc());
+        walk_correction = walk_->GetCorrection(*chanCfg, trace.GetQdc());
     }
 
-    chan->SetCalibratedEnergy(cali_->GetCalEnergy(chanCfg, energy));
+    chan->SetCalibratedEnergy(cali_->GetCalEnergy(*chanCfg, energy));
     chan->SetWalkCorrectedTime(time - walk_correction);
 
     //TODO Add group support for GetSummary() 
@@ -450,30 +463,30 @@ void DetectorDriver::FillLogicStruc() { //This should be called away from the ev
 //TODO We need to make this sensative to running on something other than a 250MHz, also in the logic processor plotting its self
     double convertTimeNS = Globals::get()->GetClockInSeconds() * 1.0e9; // converstion factor from DSP TICKs to NS
    
-    if(TreeCorrelator::get()->checkPlace("Beam")){
-        LogStruc.beamStatus = TreeCorrelator::get()->place("Beam")->status();
-        if (TreeCorrelator::get()->place("Beam")->status()){
-            LogStruc.lastBeamOnTime = TreeCorrelator::get()->place("Beam")->last().time* convertTimeNS;
-            LogStruc.lastBeamOffTime = TreeCorrelator::get()->place("Beam")->secondlast().time * convertTimeNS;
+    if(TreeCorrelator::get()->checkPlace(BEAMNAME)){
+        LogStruc.beamStatus = TreeCorrelator::get()->place(BEAMNAME)->status();
+        if (TreeCorrelator::get()->place(BEAMNAME)->status()){
+            LogStruc.lastBeamOnTime = TreeCorrelator::get()->place(BEAMNAME)->last().time* convertTimeNS;
+            LogStruc.lastBeamOffTime = TreeCorrelator::get()->place(BEAMNAME)->secondlast().time * convertTimeNS;
         } else {
-            LogStruc.lastBeamOnTime = TreeCorrelator::get()->place("Beam")->secondlast().time* convertTimeNS;
-            LogStruc.lastBeamOffTime = TreeCorrelator::get()->place("Beam")->last().time * convertTimeNS;
+            LogStruc.lastBeamOnTime = TreeCorrelator::get()->place(BEAMNAME)->secondlast().time* convertTimeNS;
+            LogStruc.lastBeamOffTime = TreeCorrelator::get()->place(BEAMNAME)->last().time * convertTimeNS;
         }
     }
 
-    if(TreeCorrelator::get()->checkPlace("TapeMove")){
-        LogStruc.tapeMoving =  TreeCorrelator::get()->place("TapeMove")->status();
-        if (TreeCorrelator::get()->place("TapeMove")->status()){
-            LogStruc.lastTapeMoveStartTime = TreeCorrelator::get()->place("TapeMove")->last().time* convertTimeNS;
+    if(TreeCorrelator::get()->checkPlace(TAPEMOVENAME)){
+        LogStruc.tapeMoving =  TreeCorrelator::get()->place(TAPEMOVENAME)->status();
+        if (TreeCorrelator::get()->place(TAPEMOVENAME)->status()){
+            LogStruc.lastTapeMoveStartTime = TreeCorrelator::get()->place(TAPEMOVENAME)->last().time* convertTimeNS;
         } else {
-            LogStruc.lastTapeMoveStartTime = TreeCorrelator::get()->place("TapeMove")->secondlast().time* convertTimeNS;
+            LogStruc.lastTapeMoveStartTime = TreeCorrelator::get()->place(TAPEMOVENAME)->secondlast().time* convertTimeNS;
         }
     }
 
-    if(TreeCorrelator::get()->checkPlace("Cycle")){
-        LogStruc.tapeCycleStatus = TreeCorrelator::get()->place("Cycle")->status();
-        if (TreeCorrelator::get()->place("Cycle")->status()){
-            double currentTime_ = TreeCorrelator::get()->place("Cycle")->last().time* convertTimeNS;
+    if(TreeCorrelator::get()->checkPlace(CYCLENAME)){
+        LogStruc.tapeCycleStatus = TreeCorrelator::get()->place(CYCLENAME)->status();
+        if (TreeCorrelator::get()->place(CYCLENAME)->status()){
+            double currentTime_ = TreeCorrelator::get()->place(CYCLENAME)->last().time* convertTimeNS;
             if (currentTime_ != lastCycleTime_){
                 lastCycleTime_ = currentTime_;
                 tapeCycleNum_++;
@@ -481,20 +494,20 @@ void DetectorDriver::FillLogicStruc() { //This should be called away from the ev
             LogStruc.lastTapeCycleStartTime = currentTime_;
             LogStruc.cycleNum = tapeCycleNum_;
         } else {
-            LogStruc.lastTapeCycleStartTime = TreeCorrelator::get()->place("Cycle")->secondlast().time* convertTimeNS;
+            LogStruc.lastTapeCycleStartTime = TreeCorrelator::get()->place(CYCLENAME)->secondlast().time* convertTimeNS;
             LogStruc.cycleNum = tapeCycleNum_;
         }
     }
     
-    if(TreeCorrelator::get()->checkPlace("Protons") && TreeCorrelator::get()->place("Protons")->status()){
-        LogStruc.lastProtonPulseTime = TreeCorrelator::get()->place("Protons")->last().time*convertTimeNS;
+    if(TreeCorrelator::get()->checkPlace(PROTONNAME) && TreeCorrelator::get()->place(PROTONNAME)->status()){
+        LogStruc.lastProtonPulseTime = TreeCorrelator::get()->place(PROTONNAME)->last().time*convertTimeNS;
     }
     
-    if (TreeCorrelator::get()->checkPlace("Supercycle") ){
-        if (TreeCorrelator::get()->place("Supercycle")->status()){
-            LogStruc.lastSuperCycleTime = TreeCorrelator::get()->place("Supercycle")->last().time* convertTimeNS;
+    if (TreeCorrelator::get()->checkPlace(SUPERCYCLENAME) ){
+        if (TreeCorrelator::get()->place(SUPERCYCLENAME)->status()){
+            LogStruc.lastSuperCycleTime = TreeCorrelator::get()->place(SUPERCYCLENAME)->last().time* convertTimeNS;
         } else {
-            LogStruc.lastSuperCycleTime = TreeCorrelator::get()->place("Supercycle")->secondlast().time* convertTimeNS;
+            LogStruc.lastSuperCycleTime = TreeCorrelator::get()->place(SUPERCYCLENAME)->secondlast().time* convertTimeNS;
         }
     }
     //fill the vector
