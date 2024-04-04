@@ -179,7 +179,7 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 	if (!EventProcessor::PreProcess(event))
 		return false;
 
-	static const auto &chanEvents = event.GetSummary("mtas", true)->GetList();
+	const auto &chanEvents = event.GetSummary("mtas", true)->GetList();
 
 	MtasSegVec = vector<MtasSegment>(24, MtasSegment(HasZeroSuppression));
 	vector<short> MtasSegMulti(48,0); // MTAS segment multiplicity "map"
@@ -515,6 +515,7 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 
 	SignalTime = EarliestTime;
 
+        EndProcess();
 	//cout << "LEAVING MtasProcessor::PreProcess" << endl;
 	return true;
 }

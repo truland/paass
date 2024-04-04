@@ -145,7 +145,7 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 	if (!EventProcessor::PreProcess(event))
 		return false;
 
-	static const auto &chanEvents = event.GetSummary("bsm", true)->GetList();
+	const auto &chanEvents = event.GetSummary("bsm", true)->GetList();
 	BSMSegVec = vector<BSMSegment>(NumSegments,BSMSegment());
 	vector<short> BSMSegMulti(2*NumSegments,0); // MTAS segment multiplicity "map"
 
@@ -260,6 +260,7 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 	TreeCorrelator::get()->place("BSM_Total")->activate(TotalData);
 
 	//cout << "LEAVE BSMProcessor::PreProcess" << endl;
+        EndProcess();
 	return true;
 }
 

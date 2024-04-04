@@ -42,7 +42,7 @@ bool MMTASProcessor::Process(RawEvent &event) {
 	if (!EventProcessor::Process(event))
 		return false;
 
-	static const auto &Events = event.GetSummary("MMTAS", true)->GetList();
+	const auto &Events = event.GetSummary("MMTAS", true)->GetList();
 	string currdet;
 	for (auto it = Events.begin(); it != Events.end(); it++) {
 		MMstruct.energy = (*it)->GetCalibratedEnergy();
