@@ -156,7 +156,7 @@ void CloverProcessor::DeclarePlots(void) {
     const int timeBins2 = S9;
     const int granTimeBins = SA;
 
-    using namespace dammIds::ge;
+    using namespace dammIds::clover;
 
     /** This was moved here from Init because the number of clovers is needed
      * for plots declaration, however Init is called after DeclarePlots */
@@ -478,6 +478,7 @@ bool CloverProcessor::PreProcess(RawEvent &event) {
         refTime = time;
     }
 
+    EndProcess();
     return true;
 }
 

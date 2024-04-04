@@ -115,6 +115,7 @@ bool GammaScintFragProcessor::PreProcess(RawEvent &event) {
     evtNum_ = DetectorDriver::get()->GetEventNumber();
     GSEvents_ = event.GetSummary("gscint")->GetList();
 
+    EndProcess();
     return (true);
 }
 bool GammaScintFragProcessor::Process(RawEvent &event) {
@@ -187,7 +188,10 @@ bool GammaScintFragProcessor::Process(RawEvent &event) {
         string subType = (*it)->GetChanID().GetSubtype();
         unsigned int subTypeOffset = ReturnOffset(subType);
         double Genergy = (*it)->GetCalibratedEnergy();
-        double Gtime = (*it)->GetTimeSansCfd() * Globals::get()->GetClockInSeconds(currentModFreq) * 1.e9;
+        //double Gtime = (*it)->GetTimeSansCfd() * Globals::get()->GetClockInSeconds(currentModFreq) * 1.e9;
+        //modify by Xu to use onboard cfd timing
+        double internalTAC_Convert_Tick_adc = Globals::get()->GetAdcClockInSeconds((*it)->GetChanID().GetModFreq()) * 1e9;
+        double Gtime = (*it)->GetTime() * internalTAC_Convert_Tick_adc;
 
         if (!((*it)->GetChanID().HasTag("dy"))) {
             plot(D_ENERGY + subTypeOffset, Genergy);

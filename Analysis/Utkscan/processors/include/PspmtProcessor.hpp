@@ -24,7 +24,7 @@ public:
     PspmtProcessor(const std::string &vd, const double &yso_scale,
                    const unsigned int &yso_offset, const double &yso_threshold,
                    const double &front_scale,
-                   const unsigned int &front_offset, const double &front_threshold, const double &rotation);
+                   const unsigned int &front_offset, const double &pin_threshold, const double &pin_overflow, const double &rotation, const bool &xflip);
 
     ///Default Destructor
     ~PspmtProcessor() {};
@@ -75,8 +75,8 @@ private:
     ///@param[in] map : The map containing the set of x and y points that we
     /// will use to calculate the position.
     ///@return The x,y position of the interaction
-    std::pair<double, double> CalculatePosition(double &xa, double &xb, double &ya,
-                                                double &yb, const VDTYPES &vdtype, double &rot);
+    std::pair<double, double> CalculatePosition(const double &xa, const double &xb, const double &ya,
+                                                const double &yb, const VDTYPES &vdtype, const double &rot, const bool &xfilp) const;
 
     ///@brief A method to fill PSStruc members. Trace analysis is also implementd here.
     void FillPSPMTStruc(const ChanEvent &chan_event);
@@ -89,10 +89,15 @@ private:
     unsigned int front_positionOffset_; ///< The offset that we need for the the
     ///< DAMM output
     double threshold_; ///< The threshold that the energy calculated by
-    double front_threshold_; ///< The threshold that the energy calculated by
+    double pin_threshold_; ///< The threshold that the energy calculated by
+    double pin_overflow_; ///< The threshold that the energy calculated by
     ///< the Pixie-16 trapezoidal filter needs to reach
     ///< before we can analyze the signals.
     double rotation_; ///< rotation angle for Pspmt positions
+    bool xflip_; ///< flip Pspmt x position
+
+    double pin0_CalEn;
+    double pin0_CalEn_prev;
 
     processor_struct::PSPMT PSstruct; //!< PSPMT root Struct
 

@@ -14,13 +14,15 @@ set(PROCESSOR_SOURCES
         GammaScintFragProcessor.cpp
         GeProcessor.cpp
         Hen3Processor.cpp
+	ImplantSsdProcessor.cpp
         IonChamberProcessor.cpp
         LiquidScintProcessor.cpp
         LitePositionProcessor.cpp
         LogicProcessor.cpp
+	MtasImplantSipmProcessor.cpp
         McpProcessor.cpp
-	MMTASProcessor.cpp
 	MtasProcessor.cpp
+	MMTASProcessor.cpp
         NeutronScintProcessor.cpp
         PidProcessor.cpp
         PositionProcessor.cpp
