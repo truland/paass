@@ -41,7 +41,6 @@ void UtkUnpacker::ProcessRawEvent() {
     static RawEvent rawev;
     DetectorDriver *driver = DetectorDriver::get();
     DetectorLibrary *detectorLibrary = DetectorLibrary::get();
-    set<string> usedDetectors;
     Messenger m;
     stringstream ss;
 
@@ -52,7 +51,7 @@ void UtkUnpacker::ProcessRawEvent() {
 
     if (eventCounter == 0)
         InitializeDriver(driver, detectorLibrary, rawev, systemStartTime);
-    else if (eventCounter % print_frequency == 0 || eventCounter == 1)
+    else if (eventCounter % 5000 == 0 || eventCounter == 1)
         PrintProcessingTimeInformation(systemStartTime, times(&systemTimes), GetEventStartTime(), eventCounter);
 
     if (Globals::get()->HasRejectionRegion()) {
@@ -203,17 +202,17 @@ void UtkUnpacker::PrintProcessingTimeInformation(const clock_t &start, const clo
     static float hz = sysconf(_SC_CLK_TCK);
 
     #ifdef DEBUG
-     ss << "Data read up to built event number " << eventCounter << " in "
-       << (now - start) / hz << " seconds. Current timestamp is "
-       << eventTime 
-       << " D :  " << DECODEDHITS 
-       << " R :  " << RAWHITS
-       << " RD : " << RDHITS;
+    ss << "Data read up to built event number " << eventCounter << " in "
+      << (now - start) / hz << " seconds. Current timestamp is "
+      << eventTime
+      << " D :  " << DECODEDHITS
+      << " R :  " << RAWHITS
+      << " RD : " << RDHITS;
     #else
-     ss << "Data read up to built event number " << eventCounter << " in "
-       << (now - start) / hz << " seconds. Current timestamp is "
-       << eventTime;
+    ss << "Data read up to built event number " << eventCounter << " in "
+      << (now - start) / hz << " seconds. Current timestamp is "
+      << eventTime;
     #endif
-       m.run_message(ss.str());
+    m.run_message(ss.str());
 }
 
