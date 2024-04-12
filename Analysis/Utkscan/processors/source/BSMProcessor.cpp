@@ -34,7 +34,24 @@ namespace dammIds {
 		const unsigned D_BSM_TOTAL = TOTAL_OFFSET; 
 		const unsigned D_BSM_MTAS_SUM = TOTAL_OFFSET + 1;
 		const unsigned D_BSM_ZERO_MTAS = TOTAL_OFFSET + 2;
-		const unsigned D_BSM_MTAS_GATES = TOTAL_OFFSET + 10;
+		const unsigned D_BSM_SATPIL_MTAS = TOTAL_OFFSET + 3;
+        //sum for yap
+		const unsigned D_BSM_SUM = TOTAL_OFFSET + 4;
+		const unsigned D_BSM_SUM_MTAS_SUM = TOTAL_OFFSET + 5;
+		const unsigned D_BSM_SUM_ZERO_MTAS = TOTAL_OFFSET + 6;
+		const unsigned D_BSM_SUM_SATPIL_MTAS = TOTAL_OFFSET + 7;
+		
+        const unsigned D_BSM_FRONT = TOTAL_OFFSET + 8;
+		const unsigned D_BSM_FRONT_MTAS_SUM = TOTAL_OFFSET + 9;
+		const unsigned D_BSM_FRONT_ZERO_MTAS = TOTAL_OFFSET + 10;
+		const unsigned D_BSM_FRONT_SATPIL_MTAS = TOTAL_OFFSET + 11;
+
+		const unsigned D_BSM_BACK = TOTAL_OFFSET + 12;
+		const unsigned D_BSM_BACK_MTAS_SUM = TOTAL_OFFSET + 13;
+		const unsigned D_BSM_BACK_ZERO_MTAS = TOTAL_OFFSET + 14;
+		const unsigned D_BSM_BACK_SATPIL_MTAS = TOTAL_OFFSET + 15;
+
+		const unsigned D_BSM_MTAS_GATES = TOTAL_OFFSET + 20;
 
 		const unsigned D_BSM_POSITION = POS_OFFSET;
 
@@ -74,6 +91,24 @@ void BSMProcessor::DeclarePlots(void){
 	DeclareHistogram1D(D_BSM_TOTAL,SE,"BSM Total");
 	DeclareHistogram1D(D_BSM_MTAS_SUM,SE,"BSM Total + MTAS Total");
 	DeclareHistogram1D(D_BSM_ZERO_MTAS,SE,"BSM Total No MTAS");
+	DeclareHistogram1D(D_BSM_SATPIL_MTAS,SE,"BSM Total MTAS Saturate");
+	
+    DeclareHistogram1D(D_BSM_SUM,SE,"BSM Sum");
+	DeclareHistogram1D(D_BSM_SUM_MTAS_SUM,SE,"BSM Sum + MTAS Total");
+	DeclareHistogram1D(D_BSM_SUM_ZERO_MTAS,SE,"BSM Sum No MTAS");
+	DeclareHistogram1D(D_BSM_SUM_SATPIL_MTAS,SE,"BSM Sum MTAS Saturate");
+    
+    DeclareHistogram1D(D_BSM_FRONT,SE,"BSM Front Only");
+	DeclareHistogram1D(D_BSM_FRONT_MTAS_SUM,SE,"BSM Front Only + MTAS Total");
+	DeclareHistogram1D(D_BSM_FRONT_ZERO_MTAS,SE,"BSM Front Only No MTAS");
+	DeclareHistogram1D(D_BSM_FRONT_SATPIL_MTAS,SE,"BSM Front Only MTAS Saturate");
+
+	DeclareHistogram1D(D_BSM_BACK,SE,"BSM Back Only");
+	DeclareHistogram1D(D_BSM_BACK_MTAS_SUM,SE,"BSM Back Only + MTAS Total");
+	DeclareHistogram1D(D_BSM_BACK_ZERO_MTAS,SE,"BSM Back Only No MTAS");
+	DeclareHistogram1D(D_BSM_BACK_SATPIL_MTAS,SE,"BSM Back Only MTAS Saturate");
+
+
 	for( unsigned int ii = 0; ii < NumGates; ++ii ){
 		string hisname = "BSM MTAS T["+to_string((int)MTASGates.at(ii).first)+","+to_string((int)MTASGates.at(ii).second)+"]";
 		DeclareHistogram1D(D_BSM_MTAS_GATES+ii,SE,hisname.c_str());
@@ -210,11 +245,25 @@ bool BSMProcessor::PreProcess(RawEvent &event) {
 	BSMTotal = 0;
 	FrontAvg = 0;
 	BackAvg = 0;
+    BSMSum = 0;
+    FrontSolo = 0;
+    BackSolo = 0;
 	int NumFire = 0;
 	for( auto& segIter : BSMSegVec ){
-		if( segIter.IsValidSegment() )
+        BSMSum = (segIter.GetFrontEnergy() + segIter.GetBackEnergy());
+		if( segIter.IsValidSegment() ){
 			++NumFire;
+        }else{
+            FrontSolo = segIter.GetFrontEnergy();
+            BackSolo = segIter.GetBackEnergy();
+            if( FrontSolo <= 0.0 ){
+                plot(D_BSM_BACK,BackSolo);
+            }else{
+                plot(D_BSM_FRONT,FrontSolo);
+            }       
+        }
 	}
+    plot(D_BSM_SUM,BSMSum);
 	if( NumFire > 0 ){
 		for( auto& segIter : BSMSegVec ){
 			auto result = segIter.GetSegmentAverageEnergy();
@@ -299,6 +348,7 @@ bool BSMProcessor::Process(RawEvent &event) {
 	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_O3");
 	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_O4");
 	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_O5");
+	IsValid &= TreeCorrelator::get()->checkPlace("MTAS_SaturatePileup");
 
 	if(IsValid){
 		double MTASTotal = 0.0;
@@ -310,78 +360,93 @@ bool BSMProcessor::Process(RawEvent &event) {
 		vector<double> InnerSegment(6,0.0);
 		vector<double> MiddleSegment(6,0.0);
 		vector<double> OutterSegment(6,0.0);
+		double MTASSatPile = -1.0;
 
-		PlaceDetector* mtas_total = nullptr;
-		if(TreeCorrelator::get()->place("MTAS_Total")->status()){
-			mtas_total = dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_Total")); 
-			if( mtas_total->info_.size() > 0 )
-				MTASTotal = mtas_total->last().energy;
+		PlaceDetector* mtas_saturatepileup = nullptr;
+		if(TreeCorrelator::get()->place("MTAS_SaturatePileup")->status()){
+			mtas_saturatepileup = dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_SaturatePileup")); 
+			if( mtas_saturatepileup->info_.size() > 0 )
+				MTASSatPile = mtas_saturatepileup->last().energy;
 		}
 
-		PlaceDetector* mtas_center = nullptr;
-		if(TreeCorrelator::get()->place("MTAS_CenterSum")->status()){
-			mtas_center = dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_CenterSum")); 
-			if( mtas_center->info_.size() > 0 )
-				MTASCenter = mtas_center->last().energy;
-		}
-
-		PlaceDetector* mtas_inner = nullptr;
-		if(TreeCorrelator::get()->place("MTAS_InnerSum")->status()){
-			mtas_inner = dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_InnerSum")); 
-			if( mtas_inner->info_.size() > 0 )
-				MTASInner = mtas_inner->last().energy;
-		}
-
-		PlaceDetector* mtas_middle = nullptr;
-		if(TreeCorrelator::get()->place("MTAS_MiddleSum")->status()){
-			mtas_middle = dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_MiddleSum")); 
-			if( mtas_middle->info_.size() > 0 )
-				MTASMiddle = mtas_middle->last().energy;
-		}
-
-		PlaceDetector* mtas_outter = nullptr;
-		if(TreeCorrelator::get()->place("MTAS_OutterSum")->status()){
-			mtas_outter = dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_OutterSum")); 
-			if( mtas_outter->info_.size() > 0 )
-				MTASOutter = mtas_outter->last().energy;
-		}
-
-		vector<PlaceDetector*> mtas_center_individual(6,nullptr);
-		vector<PlaceDetector*> mtas_inner_individual(6,nullptr);
-		vector<PlaceDetector*> mtas_middle_individual(6,nullptr);
-		vector<PlaceDetector*> mtas_outter_individual(6,nullptr);
-		for( int ii = 0; ii < 6; ++ii ){
-			if(TreeCorrelator::get()->place("MTAS_C"+to_string(ii))->status()){
-				mtas_center_individual.at(ii) =  dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_C"+to_string(ii)));
-				if( mtas_center_individual.at(ii)->info_.size() > 0 )
-					CenterSegment.at(ii) = mtas_center_individual.at(ii)->last().energy;
+		if( MTASSatPile < 0 ){
+			PlaceDetector* mtas_total = nullptr;
+			if(TreeCorrelator::get()->place("MTAS_Total")->status()){
+				mtas_total = dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_Total")); 
+				if( mtas_total->info_.size() > 0 )
+					MTASTotal = mtas_total->last().energy;
 			}
 
-			if(TreeCorrelator::get()->place("MTAS_I"+to_string(ii))->status()){
-				mtas_inner_individual.at(ii) =  dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_I"+to_string(ii)));
-				if( mtas_inner_individual.at(ii)->info_.size() > 0 )
-					InnerSegment.at(ii) = mtas_inner_individual.at(ii)->last().energy;
+			PlaceDetector* mtas_center = nullptr;
+			if(TreeCorrelator::get()->place("MTAS_CenterSum")->status()){
+				mtas_center = dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_CenterSum")); 
+				if( mtas_center->info_.size() > 0 )
+					MTASCenter = mtas_center->last().energy;
 			}
 
-			if(TreeCorrelator::get()->place("MTAS_M"+to_string(ii))->status()){
-				mtas_middle_individual.at(ii) =  dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_M"+to_string(ii)));
-				if( mtas_middle_individual.at(ii)->info_.size() > 0 )
-					MiddleSegment.at(ii) = mtas_middle_individual.at(ii)->last().energy;
+			PlaceDetector* mtas_inner = nullptr;
+			if(TreeCorrelator::get()->place("MTAS_InnerSum")->status()){
+				mtas_inner = dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_InnerSum")); 
+				if( mtas_inner->info_.size() > 0 )
+					MTASInner = mtas_inner->last().energy;
 			}
 
-			if(TreeCorrelator::get()->place("MTAS_O"+to_string(ii))->status()){
-				mtas_outter_individual.at(ii) =  dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_O"+to_string(ii)));
-				if( mtas_outter_individual.at(ii)->info_.size() > 0 )
-					OutterSegment.at(ii) = mtas_outter_individual.at(ii)->last().energy;
+			PlaceDetector* mtas_middle = nullptr;
+			if(TreeCorrelator::get()->place("MTAS_MiddleSum")->status()){
+				mtas_middle = dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_MiddleSum")); 
+				if( mtas_middle->info_.size() > 0 )
+					MTASMiddle = mtas_middle->last().energy;
 			}
 
+			PlaceDetector* mtas_outter = nullptr;
+			if(TreeCorrelator::get()->place("MTAS_OutterSum")->status()){
+				mtas_outter = dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_OutterSum")); 
+				if( mtas_outter->info_.size() > 0 )
+					MTASOutter = mtas_outter->last().energy;
+			}
+
+			vector<PlaceDetector*> mtas_center_individual(6,nullptr);
+			vector<PlaceDetector*> mtas_inner_individual(6,nullptr);
+			vector<PlaceDetector*> mtas_middle_individual(6,nullptr);
+			vector<PlaceDetector*> mtas_outter_individual(6,nullptr);
+			for( int ii = 0; ii < 6; ++ii ){
+				if(TreeCorrelator::get()->place("MTAS_C"+to_string(ii))->status()){
+					mtas_center_individual.at(ii) =  dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_C"+to_string(ii)));
+					if( mtas_center_individual.at(ii)->info_.size() > 0 )
+						CenterSegment.at(ii) = mtas_center_individual.at(ii)->last().energy;
+				}
+
+				if(TreeCorrelator::get()->place("MTAS_I"+to_string(ii))->status()){
+					mtas_inner_individual.at(ii) =  dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_I"+to_string(ii)));
+					if( mtas_inner_individual.at(ii)->info_.size() > 0 )
+						InnerSegment.at(ii) = mtas_inner_individual.at(ii)->last().energy;
+				}
+
+				if(TreeCorrelator::get()->place("MTAS_M"+to_string(ii))->status()){
+					mtas_middle_individual.at(ii) =  dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_M"+to_string(ii)));
+					if( mtas_middle_individual.at(ii)->info_.size() > 0 )
+						MiddleSegment.at(ii) = mtas_middle_individual.at(ii)->last().energy;
+				}
+
+				if(TreeCorrelator::get()->place("MTAS_O"+to_string(ii))->status()){
+					mtas_outter_individual.at(ii) =  dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("MTAS_O"+to_string(ii)));
+					if( mtas_outter_individual.at(ii)->info_.size() > 0 )
+						OutterSegment.at(ii) = mtas_outter_individual.at(ii)->last().energy;
+				}
+
+			}
+		}else{
+			plot(D_BSM_SATPIL_MTAS,BSMTotal);
+            plot(D_BSM_SUM_SATPIL_MTAS,BSMSum);
+            plot(D_BSM_FRONT_SATPIL_MTAS,FrontSolo);
+            plot(D_BSM_BACK_SATPIL_MTAS,BackSolo);
 		}
+
 
 		bool NeighborsFire = false;
 		for( int ii = 0; ii < 6; ++ii ){
 			NeighborsFire |= ((CenterSegment.at(ii) > 0.0) & ((CenterSegment.at((ii+1)%6) > 0.0) | (CenterSegment.at((5+ii)%6) > 0.0 )) );
 		}
-
 		//this catches everything that is multiplicity 3 and less in center
 		if( !NeighborsFire ){
 			plot(DD_BSM_MTAS_CENTER_SUM_VETO_CENTER_NEIGHBORS,MTASCenter,BSMTotal);
@@ -407,6 +472,9 @@ bool BSMProcessor::Process(RawEvent &event) {
 		plot(DD_BSM_MTAS_TOTAL,MTASTotal,BSMTotal);
 		plot(DD_BSM_MTAS_TOTAL_COMPRESSED,MTASTotal/10.0,BSMTotal/10.0);
 		plot(D_BSM_MTAS_SUM,MTASTotal + BSMTotal);
+        plot(D_BSM_SUM_MTAS_SUM,MTASTotal + BSMSum);
+        plot(D_BSM_FRONT_MTAS_SUM,MTASTotal + FrontSolo);
+        plot(D_BSM_BACK_MTAS_SUM,MTASTotal + BackSolo);
 		for( unsigned int ii = 0; ii < NumGates; ++ii ){
 			//plot(DD_BSM_MTAS_GATES,ii,MTASGates.at(ii).first);
 			//plot(DD_BSM_MTAS_GATES,ii,MTASGates.at(ii).second);
@@ -435,8 +503,11 @@ bool BSMProcessor::Process(RawEvent &event) {
 
 		//nothing fired inside MTAS
 		//these fill only when none of the MTAS pmts fire in the event otherwise mtas_total will exist as an object
-		if(mtas_total == nullptr){
+		if( MTASTotal <= 0.0 and MTASSatPile < 0 ){
 			plot(D_BSM_ZERO_MTAS,BSMTotal);
+            plot(D_BSM_SUM_ZERO_MTAS,BSMSum);
+            plot(D_BSM_FRONT_ZERO_MTAS,FrontSolo);
+            plot(D_BSM_BACK_ZERO_MTAS,BackSolo);
 			//plot(DD_BSM_TOTAL_POS_ZERO_MTAS,BSMPosition,BSMTotal);
 		}
 	}else{

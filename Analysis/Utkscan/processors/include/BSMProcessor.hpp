@@ -161,6 +161,9 @@ class BSMProcessor : public EventProcessor {
 		double BSMTotal;
 		double FrontAvg;
 		double BackAvg;
+        double BSMSum;
+		double FrontSolo;
+		double BackSolo;
 		std::vector<BSMSegment> BSMSegVec;
 		BSMPositionCorrection FrontCorrection;
 		BSMPositionCorrection BackCorrection;

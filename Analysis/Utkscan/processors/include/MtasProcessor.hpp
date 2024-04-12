@@ -157,6 +157,8 @@ class MtasProcessor : public EventProcessor {
 		double PrevBetaEnergy;
 		double PrevBetaTime;
 		double clockInSeconds;
+
+		bool MTASSaturatePileup;
 	
 		std::vector<MtasSegment> MtasSegVec;
 		std::pair<double,bool> centerSum;

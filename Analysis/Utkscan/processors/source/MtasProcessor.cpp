@@ -63,16 +63,21 @@ namespace dammIds {
 		const unsigned DD_MTAS_CR_T = DD_OFFSET + 1; //! MTAS Center Ring Sum vs Total Sum
 		const unsigned DD_MTAS_CS_CR = DD_OFFSET + 2; //! MTAS Center Segments vs Center Ring Sum
 		const unsigned DD_MTAS_IMO_T = DD_OFFSET + 3;  //! MTAS I,M,O Segments vs Total
-		const unsigned DD_MTAS_C1_POSITION = DD_OFFSET + 4; //!MTAS C1 energy vs position
-		const unsigned DD_MTAS_C1_C2 = DD_LIGHT_SHARE_OFFSET + 0; //! MTAS C1 VS C2
-		const unsigned DD_MTAS_C1_C6 = DD_LIGHT_SHARE_OFFSET + 1; //! MTAS C1 vs C2
-		const unsigned DD_MTAS_C3_C2 = DD_LIGHT_SHARE_OFFSET + 2; //! MTAS C3 vs C2
-		const unsigned DD_MTAS_C3_C4 = DD_LIGHT_SHARE_OFFSET + 3; //! MTAS C3 vs C4
-		const unsigned DD_MTAS_C5_C6 = DD_LIGHT_SHARE_OFFSET + 4; //! MTAS C5 vs C6
-		const unsigned DD_MTAS_C5_C4 = DD_LIGHT_SHARE_OFFSET + 5; //! MTAS C5 vs C4
-		const unsigned DD_MTAS_C1_C3 = DD_LIGHT_SHARE_OFFSET + 6; //! MTAS C1 vs C3
-		const unsigned DD_MTAS_C1_C4 = DD_LIGHT_SHARE_OFFSET + 7; //! MTAS C1 vs C4
-		const unsigned DD_MTAS_C1_C5 = DD_LIGHT_SHARE_OFFSET + 8; //! MTAS C1 vs C5
+
+		const unsigned DD_MTAS_BETA_CS_T = DD_OFFSET + 100; //! MTAS  Center Segments vs Total Sum
+		const unsigned DD_MTAS_BETA_CR_T = DD_OFFSET + 1 + 100; //! MTAS Center Ring Sum vs Total Sum
+		const unsigned DD_MTAS_BETA_CS_CR = DD_OFFSET + 2 + 100; //! MTAS Center Segments vs Center Ring Sum
+		const unsigned DD_MTAS_BETA_IMO_T = DD_OFFSET + 3 + 100;  //! MTAS I,M,O Segments vs Total
+		//const unsigned DD_MTAS_C1_POSITION = DD_OFFSET + 4; //!MTAS C1 energy vs position
+		//const unsigned DD_MTAS_C1_C2 = DD_LIGHT_SHARE_OFFSET + 0; //! MTAS C1 VS C2
+		//const unsigned DD_MTAS_C1_C6 = DD_LIGHT_SHARE_OFFSET + 1; //! MTAS C1 vs C2
+		//const unsigned DD_MTAS_C3_C2 = DD_LIGHT_SHARE_OFFSET + 2; //! MTAS C3 vs C2
+		//const unsigned DD_MTAS_C3_C4 = DD_LIGHT_SHARE_OFFSET + 3; //! MTAS C3 vs C4
+		//const unsigned DD_MTAS_C5_C6 = DD_LIGHT_SHARE_OFFSET + 4; //! MTAS C5 vs C6
+		//const unsigned DD_MTAS_C5_C4 = DD_LIGHT_SHARE_OFFSET + 5; //! MTAS C5 vs C4
+		//const unsigned DD_MTAS_C1_C3 = DD_LIGHT_SHARE_OFFSET + 6; //! MTAS C1 vs C3
+		//const unsigned DD_MTAS_C1_C4 = DD_LIGHT_SHARE_OFFSET + 7; //! MTAS C1 vs C4
+		//const unsigned DD_MTAS_C1_C5 = DD_LIGHT_SHARE_OFFSET + 8; //! MTAS C1 vs C5
 	}
 }
 using namespace std;
@@ -146,7 +151,12 @@ void MtasProcessor::DeclarePlots(void){
 	DeclareHistogram2D(DD_MTAS_CS_CR,SD,SD,"Mtas Center Segment vs Center Ring");
 	DeclareHistogram2D(DD_MTAS_CS_T,SD,SD,"Mtas Center Segment vs Total");
 	DeclareHistogram2D(DD_MTAS_IMO_T,SD,SD,"Mtas I,M,O Segment vs Total");
-	DeclareHistogram2D(DD_MTAS_C1_POSITION,SD,SD,"Mtas C1 vs Position");
+	
+    DeclareHistogram2D(DD_MTAS_BETA_CR_T,SD,SD,"Mtas Beta Center Ring vs Total");
+	DeclareHistogram2D(DD_MTAS_BETA_CS_CR,SD,SD,"Mtas Beta Center Segment vs Center Ring");
+	DeclareHistogram2D(DD_MTAS_BETA_CS_T,SD,SD,"Mtas Beta Center Segment vs Total");
+	DeclareHistogram2D(DD_MTAS_BETA_IMO_T,SD,SD,"Mtas Beta I,M,O Segment vs Total");
+	//DeclareHistogram2D(DD_MTAS_C1_POSITION,SD,SD,"Mtas C1 vs Position");
 	//DeclareHistogram2D(DD_MTAS_C1_C2,SD,SD,"Mtas C1 vs C2");
 	//DeclareHistogram2D(DD_MTAS_C1_C6,SD,SD,"Mtas C1 vs C6");
 	//DeclareHistogram2D(DD_MTAS_C3_C2,SD,SD,"Mtas C3 vs C2");
@@ -180,6 +190,7 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 		return false;
 
 	const auto &chanEvents = event.GetSummary("mtas", true)->GetList();
+	MTASSaturatePileup = false;
 
 	MtasSegVec = vector<MtasSegment>(24, MtasSegment(HasZeroSuppression));
 	vector<short> MtasSegMulti(48,0); // MTAS segment multiplicity "map"
@@ -238,6 +249,7 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 		//YOU'VE BEEN WARNED.
 		//-THOMAS RULAND 04/25/2022
 		if( (*chanEvtIter)->IsSaturated() || (*chanEvtIter)->IsPileup() or (*chanEvtIter)->GetEnergy() > 30000 ){
+			MTASSaturatePileup = true;
 			continue;
 		} else {
 			MtasSegMulti.at(GlobalMtasChanID)++; // increment the multipliciy "map" based on GlobalMtasSegID
@@ -260,260 +272,269 @@ bool MtasProcessor::PreProcess(RawEvent &event) {
 		}
 	}  //! end loop over chanEvents.
 	//cout << "INSIDE MtasProcessor::PreProcess" << endl;
+	if( MTASSaturatePileup ){
+		MtasSegVec = vector<MtasSegment>(24, MtasSegment(HasZeroSuppression));
+		MtasSegMulti = vector<short>(48,0); // MTAS segment multiplicity "map"
+		EventData SaturatePileup(EarliestTime,1.0);
+		TreeCorrelator::get()->place("MTAS_SaturatePileup")->activate(SaturatePileup);
+	}else{
+		EventData SaturatePileup(EarliestTime,-1.0);
+		TreeCorrelator::get()->place("MTAS_SaturatePileup")->activate(SaturatePileup);
 
-	//! begin loop over segments for sums
-	centerSum = make_pair(0,not HasZeroSuppression);
-	innerSum = make_pair(0,not HasZeroSuppression);
-	middleSum = make_pair(0,not HasZeroSuppression);
-	outerSum = make_pair(0,not HasZeroSuppression);
-	totalSum = make_pair(0,not HasZeroSuppression);
-	int NumCenter = 0;
-	int CurrNumCenter = 0;
-	for( auto ii = 0; ii < 6; ++ii ){
-		if( MtasSegVec.at(ii).IsValidSegment() ){
-			NumCenter++;
-			CurrNumCenter += 2;
-		}else if( MtasSegVec.at(ii).IsValidFront() || MtasSegVec.at(ii).IsValidBack() ){
-			CurrNumCenter++;
+		//! begin loop over segments for sums
+		centerSum = make_pair(0,not HasZeroSuppression);
+		innerSum = make_pair(0,not HasZeroSuppression);
+		middleSum = make_pair(0,not HasZeroSuppression);
+		outerSum = make_pair(0,not HasZeroSuppression);
+		totalSum = make_pair(0,not HasZeroSuppression);
+		int NumCenter = 0;
+		int CurrNumCenter = 0;
+		for( auto ii = 0; ii < 6; ++ii ){
+			if( MtasSegVec.at(ii).IsValidSegment() ){
+				NumCenter++;
+				CurrNumCenter += 2;
+			}else if( MtasSegVec.at(ii).IsValidFront() || MtasSegVec.at(ii).IsValidBack() ){
+				CurrNumCenter++;
+			}
 		}
-	}
-	//cout << "INSIDE MtasProcessor::PreProcess" << endl;
-	double segmentAvg = 0.0;
-	double segTdiff = 0.0;
-	double position = 0.0;
-	double frontenergy = 0.0;
-	double backenergy = 0.0;
-	for (auto segIter = MtasSegVec.begin(); segIter != MtasSegVec.end(); ++segIter) {
-		int segmentID = segIter->gMtasSegID_;
-		auto result = segIter->GetSegmentAverageEnergy();
-		if( not result.second ){
-			continue;
-		}else{
-			totalSum.second = true;
-			segmentAvg = result.first;
-		}
-		if (segmentID >= 0 && segmentID <= 5 ){
-			centerSum.second = true;
-			if( IsNewCenter ){
-				totalSum.first += segmentAvg;
-				centerSum.first += segmentAvg;
+		//cout << "INSIDE MtasProcessor::PreProcess" << endl;
+		double segmentAvg = 0.0;
+		double segTdiff = 0.0;
+		double position = 0.0;
+		double frontenergy = 0.0;
+		double backenergy = 0.0;
+		for (auto segIter = MtasSegVec.begin(); segIter != MtasSegVec.end(); ++segIter) {
+			int segmentID = segIter->gMtasSegID_;
+			auto result = segIter->GetSegmentAverageEnergy();
+			if( not result.second ){
+				continue;
 			}else{
-				if( CurrNumCenter >= NumPMTFire ){
-					totalSum.first += segmentAvg/static_cast<double>(NumCenter);
-					centerSum.first += segmentAvg/static_cast<double>(NumCenter);
+				totalSum.second = true;
+				segmentAvg = result.first;
+			}
+			if (segmentID >= 0 && segmentID <= 5 ){
+				centerSum.second = true;
+				if( IsNewCenter ){
+					totalSum.first += segmentAvg;
+					centerSum.first += segmentAvg;
+				}else{
+					if( CurrNumCenter >= NumPMTFire ){
+						totalSum.first += segmentAvg/static_cast<double>(NumCenter);
+						centerSum.first += segmentAvg/static_cast<double>(NumCenter);
+					}
 				}
+			} else if (segmentID >= 6 && segmentID <= 11 ){
+				innerSum.second = true;
+				totalSum.first += segmentAvg;
+				innerSum.first += segmentAvg;
+			} else if (segmentID >= 12 && segmentID <= 17 ){
+				middleSum.second = true;
+				totalSum.first += segmentAvg;
+				middleSum.first += segmentAvg;
+			} else if (segmentID >= 18 && segmentID <= 23 ){
+				outerSum.second = true;
+				totalSum.first += segmentAvg;
+				outerSum.first += segmentAvg;
 			}
-		} else if (segmentID >= 6 && segmentID <= 11 ){
-			innerSum.second = true;
-			totalSum.first += segmentAvg;
-			innerSum.first += segmentAvg;
-		} else if (segmentID >= 12 && segmentID <= 17 ){
-			middleSum.second = true;
-			totalSum.first += segmentAvg;
-			middleSum.first += segmentAvg;
-		} else if (segmentID >= 18 && segmentID <= 23 ){
-			outerSum.second = true;
-			totalSum.first += segmentAvg;
-			outerSum.first += segmentAvg;
 		}
-	}
-	//cout << "INSIDE MtasProcessor::PreProcess" << endl;
-	//! loop over segments for ploting
-	for (auto segIter = MtasSegVec.begin(); segIter != MtasSegVec.end(); ++segIter) {
-		int segmentID = segIter->gMtasSegID_;
-		//cout << "segmentID" << endl;
-		auto segmentAvgresult = segIter->GetSegmentAverageEnergy();
-		//cout << "segmentAvgresult" << endl;
-		auto segTdiffresult = segIter->GetSegmentTdiffInNS();
-		//cout << "segTdiffresult" << endl;
-		auto positionresult = segIter->GetSegmentPosition();
-		//cout << "positionresult" << endl;
-		auto FrontEnergyResult = segIter->GetFrontEnergy();
-		//cout << "FrontEnergyResult" << endl;
-		auto BackEnergyResult = segIter->GetBackEnergy();
-		//cout << "BackEnergyResult" << endl;
-		if( (not segmentAvgresult.second) or (not segTdiffresult.second) or (not positionresult.second) or (not FrontEnergyResult.second) or (not BackEnergyResult.second)){
-			continue;
-		}else{
-			segmentAvg = segmentAvgresult.first;
-			segTdiff = segTdiffresult.first;
-			position = ((SD/2)*(1.0 + positionresult.first));
-			frontenergy = FrontEnergyResult.first;
-			backenergy = BackEnergyResult.first;
-		}
-		//! Begin Root Output stuff.
-		//cout << "Started ROOT " << endl;
-		if (DetectorDriver::get()->GetSysRootOutput() && segIter->IsValidSegment()) {
-			Mtasstruct.energy = segIter->GetSegmentAverageEnergy().first;
-			Mtasstruct.fEnergy = segIter->GetFrontEnergy().first;
-			Mtasstruct.bEnergy = segIter->GetBackEnergy().first;
-			Mtasstruct.time = (segIter->GetFrontTimeInNS().first + segIter->GetBackTimeInNS().first)/2.0;
-			Mtasstruct.tdiff = (segIter->GetFrontTimeInNS().first - segIter->GetBackTimeInNS().first);
-			Mtasstruct.gSegmentID = segIter->gMtasSegID_;
-			Mtasstruct.segmentNum = (segIter->gMtasSegID_+1)/2;
-			Mtasstruct.Ring = segIter->segRing_;
-			if (strcmp(segIter->segRing_.c_str(), "center") == 0 ) {
-				Mtasstruct.RingNum = 1;
-			} else if (strcmp(segIter->segRing_.c_str(), "inner") == 0 ) {
-				Mtasstruct.RingNum = 2;
-			} else if (strcmp(segIter->segRing_.c_str(), "middle") == 0 ) {
-				Mtasstruct.RingNum = 3;
-			} else if (strcmp(segIter->segRing_.c_str(), "outer") == 0 ) {
-				Mtasstruct.RingNum = 4;
+		//cout << "INSIDE MtasProcessor::PreProcess" << endl;
+		//! loop over segments for ploting
+		for (auto segIter = MtasSegVec.begin(); segIter != MtasSegVec.end(); ++segIter) {
+			int segmentID = segIter->gMtasSegID_;
+			//cout << "segmentID" << endl;
+			auto segmentAvgresult = segIter->GetSegmentAverageEnergy();
+			//cout << "segmentAvgresult" << endl;
+			auto segTdiffresult = segIter->GetSegmentTdiffInNS();
+			//cout << "segTdiffresult" << endl;
+			auto positionresult = segIter->GetSegmentPosition();
+			//cout << "positionresult" << endl;
+			auto FrontEnergyResult = segIter->GetFrontEnergy();
+			//cout << "FrontEnergyResult" << endl;
+			auto BackEnergyResult = segIter->GetBackEnergy();
+			//cout << "BackEnergyResult" << endl;
+			if( (not segmentAvgresult.second) or (not segTdiffresult.second) or (not positionresult.second) or (not FrontEnergyResult.second) or (not BackEnergyResult.second)){
+				continue;
+			}else{
+				segmentAvg = segmentAvgresult.first;
+				segTdiff = segTdiffresult.first;
+				position = ((SD/2)*(1.0 + positionresult.first));
+				frontenergy = FrontEnergyResult.first;
+				backenergy = BackEnergyResult.first;
 			}
-			
-			pixie_tree_event_->mtas_vec_.emplace_back(Mtasstruct);
-			Mtasstruct = processor_struct::MTAS_DEFAULT_STRUCT;
+			//! Begin Root Output stuff.
+			//cout << "Started ROOT " << endl;
+			if (DetectorDriver::get()->GetSysRootOutput() && segIter->IsValidSegment()) {
+				Mtasstruct.energy = segIter->GetSegmentAverageEnergy().first;
+				Mtasstruct.fEnergy = segIter->GetFrontEnergy().first;
+				Mtasstruct.bEnergy = segIter->GetBackEnergy().first;
+				Mtasstruct.time = (segIter->GetFrontTimeInNS().first + segIter->GetBackTimeInNS().first)/2.0;
+				Mtasstruct.tdiff = (segIter->GetFrontTimeInNS().first - segIter->GetBackTimeInNS().first);
+				Mtasstruct.gSegmentID = segIter->gMtasSegID_;
+				Mtasstruct.segmentNum = (segIter->gMtasSegID_+1)/2;
+				Mtasstruct.Ring = segIter->segRing_;
+				if (strcmp(segIter->segRing_.c_str(), "center") == 0 ) {
+					Mtasstruct.RingNum = 1;
+				} else if (strcmp(segIter->segRing_.c_str(), "inner") == 0 ) {
+					Mtasstruct.RingNum = 2;
+				} else if (strcmp(segIter->segRing_.c_str(), "middle") == 0 ) {
+					Mtasstruct.RingNum = 3;
+				} else if (strcmp(segIter->segRing_.c_str(), "outer") == 0 ) {
+					Mtasstruct.RingNum = 4;
+				}
+
+				pixie_tree_event_->mtas_vec_.emplace_back(Mtasstruct);
+				Mtasstruct = processor_struct::MTAS_DEFAULT_STRUCT;
+			}
+			//cout << "Finished ROOT " << endl;
+
+			if (segmentID >= 0 && segmentID <= 5 ){
+				//D_MTAS_SUM_FB + 50 + OUTER_OFFSET + (2* i ),
+
+				plot(D_MTAS_TDIFF_OFFSET + CENTER_OFFSET + segmentID, segTdiff + SE/2 );
+
+				plot(D_CONICIDENCE+ (2 * segmentID), frontenergy);
+				plot(D_CONICIDENCE+ (2 * segmentID + 1), backenergy);
+
+				//! per segment plots
+				plot(D_MTAS_SUM_FB + CENTER_OFFSET + segmentID, segmentAvg);
+				plot(D_MTAS_CENTER_INDI, segmentAvg);
+				plot(DD_MTAS_CS_T, totalSum.first, segmentAvg);
+				plot(DD_MTAS_CS_CR,centerSum.first,segmentAvg);
+
+				//if( segmentID == 0 )
+				//	plot(DD_MTAS_C1_POSITION,position,segmentAvg);
+			} else if (segmentID >= 6 && segmentID <= 11 ){
+				plot(D_MTAS_TDIFF_OFFSET + INNER_OFFSET + (segmentID - 6), segTdiff + SE / 2);
+
+				plot(D_CONICIDENCE+ 12 + (2 * (segmentID-6)), frontenergy);
+				plot(D_CONICIDENCE+ 12 + (2 * (segmentID-6) + 1), backenergy);
+
+				//! per segment plots
+				plot(D_MTAS_SUM_FB + INNER_OFFSET + (segmentID - 6), segmentAvg);  //! subtract 12 to put it back in segments 1 - 6
+				plot(DD_MTAS_IMO_T, totalSum.first, segmentAvg);
+			} else if (segmentID >= 12 && segmentID <= 17 ){
+				plot(D_MTAS_TDIFF_OFFSET + MIDDLE_OFFSET +  (segmentID-12), segTdiff + SE/2 );
+
+				plot(D_CONICIDENCE+ 24 + (2 * (segmentID - 12)), frontenergy);
+				plot(D_CONICIDENCE+ 24 + (2 * (segmentID - 12) + 1), backenergy);
+
+				//! per segment plots
+				plot(D_MTAS_SUM_FB + MIDDLE_OFFSET + (segmentID-12), segmentAvg); //! subtract 12 to put it back in segments 1 - 6 
+				plot(DD_MTAS_IMO_T,totalSum.first,segmentAvg);
+			}else if (segmentID >= 18 && segmentID <= 23 ){
+				plot(D_MTAS_TDIFF_OFFSET + OUTER_OFFSET +  (segmentID-18), segTdiff + SE/2 );
+
+				plot(D_CONICIDENCE+ 36 + (2 * (segmentID-18)), frontenergy);
+				plot(D_CONICIDENCE+ 36 + (2 * (segmentID-18) + 1), backenergy);
+
+				//! per segment plots
+				plot(D_MTAS_SUM_FB + OUTER_OFFSET + (segmentID-18), segmentAvg); //! subtract 12 to put it back in segments 1 - 6 
+				plot(DD_MTAS_IMO_T,totalSum.first,segmentAvg);
+			}
 		}
-		//cout << "Finished ROOT " << endl;
-	
-		if (segmentID >= 0 && segmentID <= 5 ){
-			//D_MTAS_SUM_FB + 50 + OUTER_OFFSET + (2* i ),
+		//cout << "INSIDE MtasProcessor::PreProcess" << endl;
 
-			plot(D_MTAS_TDIFF_OFFSET + CENTER_OFFSET + segmentID, segTdiff + SE/2 );
+		//for(unsigned int ii = 0; ii < 6; ++ii){
+		//	bool isSingleSegmentFire = true;
+		//	for(unsigned int jj = 0; jj < 6; ++jj){
+		//		if( ii == jj )
+		//			continue;
+		//		if( MtasSegVec.at(jj).IsValidSegment() ){
+		//			isSingleSegmentFire = false;
+		//		}
+		//	}
+		//	if( isSingleSegmentFire ){
+		//		plot(D_SINGLE_CENTER_OFFSET + ii,MtasSegVec.at(ii).GetSegmentAverageEnergy());
+		//	}
+		//	if( ii == 0 and (not MtasSegVec.at(1).IsValidSegment()) and (not MtasSegVec.at(5).IsValidSegment()) )
+		//		plot(D_SINGLE_CENTER_OFFSET + ii + 6,MtasSegVec.at(0).GetSegmentAverageEnergy());
+		//	if( ii == 1 and (not MtasSegVec.at(2).IsValidSegment()) and (not MtasSegVec.at(0).IsValidSegment()) )
+		//		plot(D_SINGLE_CENTER_OFFSET + ii + 6,MtasSegVec.at(1).GetSegmentAverageEnergy());
+		//	if( ii == 2 and (not MtasSegVec.at(3).IsValidSegment()) and (not MtasSegVec.at(1).IsValidSegment()) )
+		//		plot(D_SINGLE_CENTER_OFFSET + ii + 6,MtasSegVec.at(2).GetSegmentAverageEnergy());
+		//	if( ii == 3 and (not MtasSegVec.at(4).IsValidSegment()) and (not MtasSegVec.at(2).IsValidSegment()) )
+		//		plot(D_SINGLE_CENTER_OFFSET + ii + 6,MtasSegVec.at(3).GetSegmentAverageEnergy());
+		//	if( ii == 4 and (not MtasSegVec.at(5).IsValidSegment()) and (not MtasSegVec.at(3).IsValidSegment()) )
+		//		plot(D_SINGLE_CENTER_OFFSET + ii + 6,MtasSegVec.at(4).GetSegmentAverageEnergy());
+		//	if( ii == 5 and (not MtasSegVec.at(0).IsValidSegment()) and (not MtasSegVec.at(4).IsValidSegment()) )
+		//		plot(D_SINGLE_CENTER_OFFSET + ii + 6,MtasSegVec.at(5).GetSegmentAverageEnergy());
+		//}
 
-			plot(D_CONICIDENCE+ (2 * segmentID), frontenergy);
-			plot(D_CONICIDENCE+ (2 * segmentID + 1), backenergy);
+		//! sum spectra
+		if( totalSum.second )
+			plot(D_MTAS_TOTAL, totalSum.first);
+		if( centerSum.second )
+			plot(D_MTAS_CENTER, centerSum.first);
+		if( innerSum.second )
+			plot(D_MTAS_INNER, innerSum.first);
+		if( middleSum.second )
+			plot(D_MTAS_MIDDLE, middleSum.first);
+		if( outerSum.second )
+			plot(D_MTAS_OUTER, outerSum.first);
 
-			//! per segment plots
-			plot(D_MTAS_SUM_FB + CENTER_OFFSET + segmentID, segmentAvg);
-			plot(D_MTAS_CENTER_INDI, segmentAvg);
-			plot(DD_MTAS_CS_T, totalSum.first, segmentAvg);
-			plot(DD_MTAS_CS_CR,centerSum.first,segmentAvg);
-			
-			if( segmentID == 0 )
-				plot(DD_MTAS_C1_POSITION,position,segmentAvg);
-		} else if (segmentID >= 6 && segmentID <= 11 ){
-			plot(D_MTAS_TDIFF_OFFSET + INNER_OFFSET + (segmentID - 6), segTdiff + SE / 2);
+		if( totalSum.second and centerSum.second )
+			plot(DD_MTAS_CR_T, totalSum.first, centerSum.first);
 
-			plot(D_CONICIDENCE+ 12 + (2 * (segmentID-6)), frontenergy);
-			plot(D_CONICIDENCE+ 12 + (2 * (segmentID-6) + 1), backenergy);
+		//plot(DD_MTAS_C1_C2,MtasSegVec.at(1).GetSegmentAverageEnergy(),MtasSegVec.at(0).GetSegmentAverageEnergy());
+		//plot(DD_MTAS_C1_C6,MtasSegVec.at(5).GetSegmentAverageEnergy(),MtasSegVec.at(0).GetSegmentAverageEnergy());
+		//plot(DD_MTAS_C3_C2,MtasSegVec.at(1).GetSegmentAverageEnergy(),MtasSegVec.at(2).GetSegmentAverageEnergy());
+		//plot(DD_MTAS_C3_C4,MtasSegVec.at(3).GetSegmentAverageEnergy(),MtasSegVec.at(2).GetSegmentAverageEnergy());
+		//plot(DD_MTAS_C5_C4,MtasSegVec.at(3).GetSegmentAverageEnergy(),MtasSegVec.at(4).GetSegmentAverageEnergy());
+		//plot(DD_MTAS_C5_C6,MtasSegVec.at(5).GetSegmentAverageEnergy(),MtasSegVec.at(4).GetSegmentAverageEnergy());
+		//plot(DD_MTAS_C1_C3,MtasSegVec.at(2).GetSegmentAverageEnergy(),MtasSegVec.at(0).GetSegmentAverageEnergy());
+		//plot(DD_MTAS_C1_C4,MtasSegVec.at(3).GetSegmentAverageEnergy(),MtasSegVec.at(0).GetSegmentAverageEnergy());
+		//plot(DD_MTAS_C1_C5,MtasSegVec.at(4).GetSegmentAverageEnergy(),MtasSegVec.at(0).GetSegmentAverageEnergy());
 
-			//! per segment plots
-			plot(D_MTAS_SUM_FB + INNER_OFFSET + (segmentID - 6), segmentAvg);  //! subtract 12 to put it back in segments 1 - 6
-			plot(DD_MTAS_IMO_T, totalSum.first, segmentAvg);
-		} else if (segmentID >= 12 && segmentID <= 17 ){
-			plot(D_MTAS_TDIFF_OFFSET + MIDDLE_OFFSET +  (segmentID-12), segTdiff + SE/2 );
-
-			plot(D_CONICIDENCE+ 24 + (2 * (segmentID - 12)), frontenergy);
-			plot(D_CONICIDENCE+ 24 + (2 * (segmentID - 12) + 1), backenergy);
-
-			//! per segment plots
-			plot(D_MTAS_SUM_FB + MIDDLE_OFFSET + (segmentID-12), segmentAvg); //! subtract 12 to put it back in segments 1 - 6 
-			plot(DD_MTAS_IMO_T,totalSum.first,segmentAvg);
-		}else if (segmentID >= 18 && segmentID <= 23 ){
-			plot(D_MTAS_TDIFF_OFFSET + OUTER_OFFSET +  (segmentID-18), segTdiff + SE/2 );
-
-			plot(D_CONICIDENCE+ 36 + (2 * (segmentID-18)), frontenergy);
-			plot(D_CONICIDENCE+ 36 + (2 * (segmentID-18) + 1), backenergy);
-
-			//! per segment plots
-			plot(D_MTAS_SUM_FB + OUTER_OFFSET + (segmentID-18), segmentAvg); //! subtract 12 to put it back in segments 1 - 6 
-			plot(DD_MTAS_IMO_T,totalSum.first,segmentAvg);
-		}
-	}
-	//cout << "INSIDE MtasProcessor::PreProcess" << endl;
-
-	//for(unsigned int ii = 0; ii < 6; ++ii){
-	//	bool isSingleSegmentFire = true;
-	//	for(unsigned int jj = 0; jj < 6; ++jj){
-	//		if( ii == jj )
-	//			continue;
-	//		if( MtasSegVec.at(jj).IsValidSegment() ){
-	//			isSingleSegmentFire = false;
-	//		}
-	//	}
-	//	if( isSingleSegmentFire ){
-	//		plot(D_SINGLE_CENTER_OFFSET + ii,MtasSegVec.at(ii).GetSegmentAverageEnergy());
-	//	}
-	//	if( ii == 0 and (not MtasSegVec.at(1).IsValidSegment()) and (not MtasSegVec.at(5).IsValidSegment()) )
-	//		plot(D_SINGLE_CENTER_OFFSET + ii + 6,MtasSegVec.at(0).GetSegmentAverageEnergy());
-	//	if( ii == 1 and (not MtasSegVec.at(2).IsValidSegment()) and (not MtasSegVec.at(0).IsValidSegment()) )
-	//		plot(D_SINGLE_CENTER_OFFSET + ii + 6,MtasSegVec.at(1).GetSegmentAverageEnergy());
-	//	if( ii == 2 and (not MtasSegVec.at(3).IsValidSegment()) and (not MtasSegVec.at(1).IsValidSegment()) )
-	//		plot(D_SINGLE_CENTER_OFFSET + ii + 6,MtasSegVec.at(2).GetSegmentAverageEnergy());
-	//	if( ii == 3 and (not MtasSegVec.at(4).IsValidSegment()) and (not MtasSegVec.at(2).IsValidSegment()) )
-	//		plot(D_SINGLE_CENTER_OFFSET + ii + 6,MtasSegVec.at(3).GetSegmentAverageEnergy());
-	//	if( ii == 4 and (not MtasSegVec.at(5).IsValidSegment()) and (not MtasSegVec.at(3).IsValidSegment()) )
-	//		plot(D_SINGLE_CENTER_OFFSET + ii + 6,MtasSegVec.at(4).GetSegmentAverageEnergy());
-	//	if( ii == 5 and (not MtasSegVec.at(0).IsValidSegment()) and (not MtasSegVec.at(4).IsValidSegment()) )
-	//		plot(D_SINGLE_CENTER_OFFSET + ii + 6,MtasSegVec.at(5).GetSegmentAverageEnergy());
-	//}
-
-	//! sum spectra
-	if( totalSum.second )
-		plot(D_MTAS_TOTAL, totalSum.first);
-	if( centerSum.second )
-		plot(D_MTAS_CENTER, centerSum.first);
-	if( innerSum.second )
-		plot(D_MTAS_INNER, innerSum.first);
-	if( middleSum.second )
-		plot(D_MTAS_MIDDLE, middleSum.first);
-	if( outerSum.second )
-		plot(D_MTAS_OUTER, outerSum.first);
-
-	if( totalSum.second and centerSum.second )
-		plot(DD_MTAS_CR_T, totalSum.first, centerSum.first);
-
-	//plot(DD_MTAS_C1_C2,MtasSegVec.at(1).GetSegmentAverageEnergy(),MtasSegVec.at(0).GetSegmentAverageEnergy());
-	//plot(DD_MTAS_C1_C6,MtasSegVec.at(5).GetSegmentAverageEnergy(),MtasSegVec.at(0).GetSegmentAverageEnergy());
-	//plot(DD_MTAS_C3_C2,MtasSegVec.at(1).GetSegmentAverageEnergy(),MtasSegVec.at(2).GetSegmentAverageEnergy());
-	//plot(DD_MTAS_C3_C4,MtasSegVec.at(3).GetSegmentAverageEnergy(),MtasSegVec.at(2).GetSegmentAverageEnergy());
-	//plot(DD_MTAS_C5_C4,MtasSegVec.at(3).GetSegmentAverageEnergy(),MtasSegVec.at(4).GetSegmentAverageEnergy());
-	//plot(DD_MTAS_C5_C6,MtasSegVec.at(5).GetSegmentAverageEnergy(),MtasSegVec.at(4).GetSegmentAverageEnergy());
-	//plot(DD_MTAS_C1_C3,MtasSegVec.at(2).GetSegmentAverageEnergy(),MtasSegVec.at(0).GetSegmentAverageEnergy());
-	//plot(DD_MTAS_C1_C4,MtasSegVec.at(3).GetSegmentAverageEnergy(),MtasSegVec.at(0).GetSegmentAverageEnergy());
-	//plot(DD_MTAS_C1_C5,MtasSegVec.at(4).GetSegmentAverageEnergy(),MtasSegVec.at(0).GetSegmentAverageEnergy());
-
-	//! Plot Multis 
-	for (unsigned it = 0; it < MtasSegMulti.size(); ++it){
-		plot(D_ONE_OFFS + 0, it, MtasSegMulti.at(it));
-	}
-
-	//place MTAS_Total so other classes have access to it
-	if( totalSum.second ){
-		EventData TotalData(EarliestTime,totalSum.first);
-		TreeCorrelator::get()->place("MTAS_Total")->activate(TotalData);
-	}
-	if( centerSum.second ){
-		EventData CenterSum(EarliestTime,centerSum.first);
-		TreeCorrelator::get()->place("MTAS_CenterSum")->activate(CenterSum);
-	}
-	if( innerSum.second ){
-		EventData InnerSum(EarliestTime,innerSum.first);
-		TreeCorrelator::get()->place("MTAS_InnerSum")->activate(InnerSum);
-	}
-	if( middleSum.second ){
-		EventData MiddleSum(EarliestTime,middleSum.first);
-		TreeCorrelator::get()->place("MTAS_MiddleSum")->activate(MiddleSum);
-	}
-	if( outerSum.second ){
-		EventData OutterSum(EarliestTime,outerSum.first);
-		TreeCorrelator::get()->place("MTAS_OutterSum")->activate(OutterSum);
-	}
-	for( int ii = 0; ii < 6; ++ii ){
-		if( MtasSegVec.at(ii).IsValidSegment() ){
-			EventData CurrCenter(EarliestTime,MtasSegVec.at(ii).GetSegmentAverageEnergy().first);
-			TreeCorrelator::get()->place("MTAS_C"+to_string(ii))->activate(CurrCenter);
+		//! Plot Multis 
+		for (unsigned it = 0; it < MtasSegMulti.size(); ++it){
+			plot(D_ONE_OFFS + 0, it, MtasSegMulti.at(it));
 		}
 
-		if( MtasSegVec.at(ii+6).IsValidSegment() ){
-			EventData CurrInner(EarliestTime,MtasSegVec.at(ii+6).GetSegmentAverageEnergy().first);
-			TreeCorrelator::get()->place("MTAS_I"+to_string(ii))->activate(CurrInner);
+		//place MTAS_Total so other classes have access to it
+		if( totalSum.second ){
+			EventData TotalData(EarliestTime,totalSum.first);
+			TreeCorrelator::get()->place("MTAS_Total")->activate(TotalData);
+		}
+		if( centerSum.second ){
+			EventData CenterSum(EarliestTime,centerSum.first);
+			TreeCorrelator::get()->place("MTAS_CenterSum")->activate(CenterSum);
+		}
+		if( innerSum.second ){
+			EventData InnerSum(EarliestTime,innerSum.first);
+			TreeCorrelator::get()->place("MTAS_InnerSum")->activate(InnerSum);
+		}
+		if( middleSum.second ){
+			EventData MiddleSum(EarliestTime,middleSum.first);
+			TreeCorrelator::get()->place("MTAS_MiddleSum")->activate(MiddleSum);
+		}
+		if( outerSum.second ){
+			EventData OutterSum(EarliestTime,outerSum.first);
+			TreeCorrelator::get()->place("MTAS_OutterSum")->activate(OutterSum);
+		}
+		for( int ii = 0; ii < 6; ++ii ){
+			if( MtasSegVec.at(ii).IsValidSegment() ){
+				EventData CurrCenter(EarliestTime,MtasSegVec.at(ii).GetSegmentAverageEnergy().first);
+				TreeCorrelator::get()->place("MTAS_C"+to_string(ii))->activate(CurrCenter);
+			}
+
+			if( MtasSegVec.at(ii+6).IsValidSegment() ){
+				EventData CurrInner(EarliestTime,MtasSegVec.at(ii+6).GetSegmentAverageEnergy().first);
+				TreeCorrelator::get()->place("MTAS_I"+to_string(ii))->activate(CurrInner);
+			}
+
+			if( MtasSegVec.at(ii+12).IsValidSegment() ){
+				EventData CurrMiddle(EarliestTime,MtasSegVec.at(ii+12).GetSegmentAverageEnergy().first);
+				TreeCorrelator::get()->place("MTAS_M"+to_string(ii))->activate(CurrMiddle);
+			}
+
+			if( MtasSegVec.at(ii+18).IsValidSegment() ){
+				EventData CurrOutter(EarliestTime,MtasSegVec.at(ii+18).GetSegmentAverageEnergy().first);
+				TreeCorrelator::get()->place("MTAS_O"+to_string(ii))->activate(CurrOutter);
+			}
 		}
 
-		if( MtasSegVec.at(ii+12).IsValidSegment() ){
-			EventData CurrMiddle(EarliestTime,MtasSegVec.at(ii+12).GetSegmentAverageEnergy().first);
-			TreeCorrelator::get()->place("MTAS_M"+to_string(ii))->activate(CurrMiddle);
-		}
-
-		if( MtasSegVec.at(ii+18).IsValidSegment() ){
-			EventData CurrOutter(EarliestTime,MtasSegVec.at(ii+18).GetSegmentAverageEnergy().first);
-			TreeCorrelator::get()->place("MTAS_O"+to_string(ii))->activate(CurrOutter);
-		}
+		SignalTime = EarliestTime;
 	}
-
-	SignalTime = EarliestTime;
 
         EndProcess();
 	//cout << "LEAVING MtasProcessor::PreProcess" << endl;
@@ -526,23 +547,47 @@ bool MtasProcessor::Process(RawEvent &event) {
 		return false;
 
 	bool isBeta = false;
-	if(TreeCorrelator::get()->checkPlace("BSM_Total")){
+	if(TreeCorrelator::get()->checkPlace("BSM_Total") and not MTASSaturatePileup){
 		//This is the BSM beta gated stuff
 		if(TreeCorrelator::get()->place("BSM_Total")->status()){
 			PlaceDetector* bsm_total = dynamic_cast<PlaceDetector*>(TreeCorrelator::get()->place("BSM_Total")); 
-		
+
 			if( bsm_total->info_.size() > 0 and bsm_total->last().energy >= BetaThreshold ){
 				isBeta = true;
 			}
-			
+
 			if( isBeta ){
 				IsPrevBetaTriggered = true;
 				PrevBetaTime = SignalTime;
 				PrevBetaEnergy = bsm_total->last().energy;
-				if( totalSum.second )
+				if( totalSum.second ){
 					plot(D_MTAS_BETA_TOTAL,totalSum.first);
-				if( centerSum.second )
+					if( centerSum.second ){
+						plot(DD_MTAS_BETA_CR_T,totalSum.first,centerSum.first);
+					}
+					for( size_t ii = 0; ii < 6; ++ii ){
+						if( MtasSegVec.at(ii).IsValidSegment() ){
+							plot(DD_MTAS_BETA_CS_T,totalSum.first,MtasSegVec.at(ii).GetSegmentAverageEnergy().first);
+						}
+						if( MtasSegVec.at(ii+6).IsValidSegment() ){
+							plot(DD_MTAS_BETA_IMO_T,totalSum.first,MtasSegVec.at(ii+6).GetSegmentAverageEnergy().first);
+						}
+						if( MtasSegVec.at(ii+12).IsValidSegment() ){
+							plot(DD_MTAS_BETA_IMO_T,totalSum.first,MtasSegVec.at(ii+12).GetSegmentAverageEnergy().first);
+						}
+						if( MtasSegVec.at(ii+18).IsValidSegment() ){
+							plot(DD_MTAS_BETA_IMO_T,totalSum.first,MtasSegVec.at(ii+18).GetSegmentAverageEnergy().first);
+						}
+					}
+				}
+				if( centerSum.second ){
 					plot(D_MTAS_BETA_CENTER, centerSum.first);
+					for( size_t ii = 0; ii < 6; ++ii ){
+						if( MtasSegVec.at(ii).IsValidSegment() ){
+							plot(DD_MTAS_BETA_CS_CR,centerSum.first,MtasSegVec.at(ii).GetSegmentAverageEnergy().first);
+						}
+					}
+				}
 				if( innerSum.second )
 					plot(D_MTAS_BETA_INNER, innerSum.first);
 				if( middleSum.second )
