@@ -47,6 +47,7 @@
 #include "MtasImplantSipmProcessor.hpp"
 #include "NeutronScintProcessor.hpp"
 #include "PidProcessor.hpp"
+#include "PMTASProcessor.hpp"
 #include "PositionProcessor.hpp"
 #include "PspmtProcessor.hpp"
 #include "RootDevProcessor.hpp"
@@ -249,6 +250,8 @@ vector<EventProcessor *> DetectorDriverXmlParser::ParseProcessors(const pugi::xm
             vecProcess.push_back(new McpProcessor());
 	} else if (name == "MMTASProcessor") {
 		vecProcess.push_back(new MMTASProcessor());
+	} else if (name == "PMTASProcessor") {
+		vecProcess.push_back(new PMTASProcessor());
 	} else if (name == "MtasProcessor") {
 		vecProcess.push_back(new MtasProcessor(
 					processor.attribute("new_center").as_bool(false),

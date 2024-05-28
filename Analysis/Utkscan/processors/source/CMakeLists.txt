@@ -25,6 +25,7 @@ set(PROCESSOR_SOURCES
 	MMTASProcessor.cpp
         NeutronScintProcessor.cpp
         PidProcessor.cpp
+	PMTASProcessor.cpp
         PositionProcessor.cpp
         PspmtProcessor.cpp
         RootDevProcessor.cpp
